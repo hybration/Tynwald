@@ -1,0 +1,250 @@
+/* ===========================================
+   TYNWALD — Post / thread detail page styles
+   Builds on top of styles.css tokens
+   =========================================== */
+
+.back-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--slate-soft);
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+
+.back-link:hover {
+  color: var(--ink);
+}
+
+/* ===================== THREAD POST (full version) ===================== */
+
+.thread-post {
+  max-width: 700px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--ink);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+
+.thread-avatar {
+  width: 40px;
+  height: 40px;
+  background: var(--slate);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 15px;
+  flex-shrink: 0;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  box-shadow: 0 0 0 1px var(--gold-dim);
+}
+
+.thread-avatar.small {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+
+.thread-post .post-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+
+.thread-time {
+  margin-left: auto;
+}
+
+.thread-title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--ink);
+  line-height: 1.3;
+  margin: 0 0 18px;
+}
+
+.thread-body p {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  margin: 0 0 16px;
+}
+
+.thread-body p:last-child {
+  margin-bottom: 0;
+}
+
+.thread-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.thread-action-btn {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.thread-action-btn:hover {
+  border-color: var(--slate);
+  color: var(--ink);
+}
+
+/* ===================== REPLY COMPOSER ===================== */
+
+.reply-composer {
+  max-width: 700px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.reply-input {
+  flex: 1;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.reply-input:focus {
+  outline: none;
+  border-color: var(--slate);
+}
+
+.reply-composer .btn-primary {
+  flex-shrink: 0;
+  margin-bottom: 0;
+  align-self: flex-end;
+}
+
+/* ===================== COMMENT THREAD ===================== */
+
+.comment-thread {
+  max-width: 700px;
+}
+
+.comment-section-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slate-soft);
+  margin-bottom: 16px;
+}
+
+.comment {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.comment-body {
+  flex: 1;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+
+.comment-author {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.comment-inst {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--slate-soft);
+}
+
+.comment-text {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  margin: 0 0 8px;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 14px;
+}
+
+.comment-action {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--slate-soft);
+  cursor: pointer;
+}
+
+.comment-action:hover {
+  color: var(--slate);
+}
+
+.tag.tiny {
+  font-size: 9px;
+  padding: 2px 5px;
+}
+
+.comment.nested {
+  margin-top: 16px;
+  margin-bottom: 0;
+  padding-left: 16px;
+  border-left: 2px solid var(--line);
+}
+
+/* ===================== RESPONSIVE ===================== */
+
+@media (max-width: 760px) {
+  .thread-post,
+  .reply-composer,
+  .comment-thread {
+    max-width: 100%;
+  }
+
+  .thread-title {
+    font-size: 20px;
+  }
+
+  .thread-actions {
+    flex-wrap: wrap;
+  }
+
+  .reply-composer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reply-composer .btn-primary {
+    align-self: flex-end;
+  }
+}

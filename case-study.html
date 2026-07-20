@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tynwald — Case Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=1" />
+<link rel="stylesheet" href="post.css?v=1" />
+<link rel="stylesheet" href="case-study.css?v=1" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- ===================== SIDEBAR (same as index.html) ===================== -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-row">
+          <a href="home.html" class="brand-name-link"><div class="brand-name">Tynwald</div></a>
+          <button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button>
+          <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">☰</button>
+        </div>
+        <div class="brand-tagline">KNOWLEDGE · JUSTICE · COMMUNITY</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <nav class="nav">
+        <a class="nav-item" href="index.html#feed">
+          <span class="nav-abbr">FD</span><span>Feed</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#communities">
+          <span class="nav-abbr">CM</span><span>Communities</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#research">
+          <span class="nav-abbr">RH</span><span>Research Hub</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#library">
+          <span class="nav-abbr">CL</span><span>Case Study Library</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#messages">
+          <span class="nav-abbr">MS</span><span>Messages</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#notifications">
+          <span class="nav-abbr">NT</span><span>Notifications</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#profile">
+          <span class="nav-abbr">PR</span><span>Profile</span><span class="nav-dot">●</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle night ops mode">
+          <span class="theme-toggle-dot"></span>
+          <span class="theme-toggle-label">Night Ops</span>
+        </button>
+        <div class="divider"></div>
+        <div class="user-card">
+          <div class="avatar" id="sidebarAvatar"></div>
+          <div>
+            <div class="user-name" id="sidebarUserName"></div>
+            <div class="user-role" id="sidebarUserRole"></div>
+          </div>
+          <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out">⏻</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===================== CASE STUDY CONTENT ===================== -->
+    <main class="content">
+
+      <a href="index.html#library" class="back-link">← Back to Case Study Library</a>
+
+      <p id="caseStudyDetailLoading" class="empty-state">Loading case study...</p>
+
+      <!-- Case study entry, full version -->
+      <article class="thread-post hidden" id="caseStudyDetail">
+        <div class="post-top">
+          <span class="case-stamp" id="csCaseId"></span>
+          <span class="tag" id="csCategory"></span>
+        </div>
+
+        <h1 class="thread-title" id="csTitle"></h1>
+
+        <div class="thread-body">
+          <p id="csDescription"></p>
+        </div>
+
+        <div class="thread-actions">
+          <span class="thread-action-btn" id="csMeta"></span>
+          <span class="thread-action-btn" id="threadReplyCount">0 replies</span>
+        </div>
+      </article>
+
+      <!-- Reply composer (same IDs as post.html — the JS is shared) -->
+      <div class="reply-composer hidden" id="replyComposer">
+        <div class="thread-avatar small" id="replyComposerAvatar"></div>
+        <textarea id="replyInput" class="reply-input" placeholder="Add to the discussion..." rows="2"></textarea>
+        <button id="replySubmit" class="btn-primary">Post reply</button>
+      </div>
+
+      <!-- Comment thread (same IDs as post.html — the JS is shared) -->
+      <div class="comment-thread hidden" id="commentThreadWrap">
+
+        <div class="comment-section-label" id="commentCountLabel">0 replies</div>
+
+        <div id="commentList"></div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toastStack"></div>
+
+  <script src="config.js?v=1"></script>
+  <script src="script.js?v=1"></script>
+
+</body>
+</html>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tynwald</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=1" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-row">
+          <a href="home.html" class="brand-name-link"><div class="brand-name">Tynwald</div></a>
+          <button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button>
+          <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">☰</button>
+        </div>
+        <div class="brand-tagline">KNOWLEDGE · JUSTICE · COMMUNITY</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-page="feed">
+          <span class="nav-abbr">FD</span><span>Feed</span><span class="nav-dot">●</span>
+        </button>
+        <button class="nav-item" data-page="communities">
+          <span class="nav-abbr">CM</span><span>Communities</span><span class="nav-dot">●</span>
+        </button>
+        <button class="nav-item" data-page="research">
+          <span class="nav-abbr">RH</span><span>Research Hub</span><span class="nav-dot">●</span>
+        </button>
+        <button class="nav-item" data-page="library">
+          <span class="nav-abbr">CL</span><span>Case Study Library</span><span class="nav-dot">●</span>
+        </button>
+        <button class="nav-item" data-page="messages">
+          <span class="nav-abbr">MS</span><span>Messages</span>
+          <span class="nav-badge hidden" id="navBadgeMessages">0</span>
+          <span class="nav-dot">●</span>
+        </button>
+        <button class="nav-item" data-page="notifications">
+          <span class="nav-abbr">NT</span><span>Notifications</span>
+          <span class="nav-badge hidden" id="navBadgeNotifications">0</span>
+          <span class="nav-dot">●</span>
+        </button>
+        <button class="nav-item" data-page="events">
+          <span class="nav-abbr">EV</span><span>Events</span><span class="nav-dot">●</span>
+        </button>
+        <button class="nav-item" data-page="profile">
+          <span class="nav-abbr">PR</span><span>Profile</span><span class="nav-dot">●</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle night ops mode">
+          <span class="theme-toggle-dot"></span>
+          <span class="theme-toggle-label">Night Ops</span>
+        </button>
+        <div class="divider"></div>
+        <div class="user-card">
+          <div class="avatar" id="sidebarAvatar">AO</div>
+          <div>
+            <div class="user-name" id="sidebarUserName">Amara Okafor</div>
+            <div class="user-role" id="sidebarUserRole">Student Scholar</div>
+          </div>
+          <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out">⏻</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===================== MAIN CONTENT ===================== -->
+    <main class="content">
+
+      <!-- ---------- FEED PAGE ---------- -->
+      <section class="page" id="page-feed">
+        <header class="page-header">
+          <div class="eyebrow">DISCUSSION LOG</div>
+          <h1>Feed</h1>
+          <p class="subtitle">Active discussions, research notes, and field reports from across the network.</p>
+        </header>
+
+        <!-- New post composer -->
+        <div class="composer">
+          <div class="composer-tab">NEW ENTRY</div>
+          <div class="composer-row-top">
+            <div class="thread-avatar small" id="composerAvatar"></div>
+            <input
+              type="text"
+              id="composerTitle"
+              class="composer-title-input"
+              placeholder="Title — what's the discussion or finding?"
+            />
+          </div>
+          <textarea
+            id="composerBody"
+            class="composer-body-input"
+            placeholder="Add detail, context, or a question for the community..."
+            rows="3"
+          ></textarea>
+
+          <div class="composer-attachment-row">
+            <input type="file" id="composerImageInput" accept="image/*" class="hidden" />
+            <button type="button" id="composerAttachBtn" class="composer-attach-btn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
+              Attach image
+            </button>
+            <div id="composerImagePreviewWrap" class="composer-image-preview-wrap hidden">
+              <img id="composerImagePreview" class="composer-image-preview" alt="Attachment preview" />
+              <button type="button" id="composerRemoveImage" class="composer-remove-image">×</button>
+            </div>
+          </div>
+
+          <div class="composer-row-bottom">
+            <select id="composerTag" class="composer-tag-select">
+              <option value="Cybercrime">Cybercrime</option>
+              <option value="Juvenile Justice">Juvenile Justice</option>
+              <option value="Community Policing">Community Policing</option>
+              <option value="Victimology">Victimology</option>
+              <option value="Forensic Science">Forensic Science</option>
+              <option value="Criminal Law">Criminal Law</option>
+            </select>
+            <button id="composerSubmit" class="btn-primary composer-submit">File post</button>
+          </div>
+        </div>
+
+        <div class="search-row">
+          <input
+            type="text"
+            id="feedSearch"
+            class="search-input"
+            placeholder="Search the feed by title or content..."
+          />
+        </div>
+
+        <div class="filter-row" id="feedFilters">
+          <button class="filter-chip active" data-filter="All">All</button>
+          <button class="filter-chip" data-filter="Cybercrime">Cybercrime</button>
+          <button class="filter-chip" data-filter="Juvenile Justice">Juvenile Justice</button>
+          <button class="filter-chip" data-filter="Community Policing">Community Policing</button>
+          <button class="filter-chip" data-filter="Victimology">Victimology</button>
+        </div>
+
+        <p id="feedEmptyState" class="empty-state hidden">No posts match your search or filter.</p>
+
+        <p id="feedLoading" class="empty-state">Loading the feed...</p>
+
+        <div id="feed-posts"></div>
+
+        <div id="feedScrollSentinel"></div>
+        <p id="feedLoadingMore" class="empty-state hidden" style="padding: 16px 0; font-size: 12px;"></p>
+      </section>
+
+      <!-- ---------- COMMUNITIES PAGE ---------- -->
+      <section class="page hidden" id="page-communities">
+        <header class="page-header">
+          <div class="eyebrow">INDEXED FOLDERS</div>
+          <h1>Communities</h1>
+          <p class="subtitle">Topic-based groups, organized like case folders. Join the ones relevant to your work.</p>
+        </header>
+
+        <div class="community-actions-row">
+          <button id="toggleCreateCommunity" class="btn-primary">+ Create Community</button>
+        </div>
+
+        <!-- Create community form (hidden until toggled open) -->
+        <div id="createCommunityForm" class="composer create-community-form hidden">
+          <div class="composer-tab">NEW FOLDER</div>
+          <div class="composer-row-top">
+            <input
+              type="text"
+              id="newCommunityName"
+              class="composer-title-input"
+              placeholder="Community name — e.g. Restorative Justice"
+            />
+          </div>
+          <textarea
+            id="newCommunityDesc"
+            class="composer-body-input"
+            placeholder="Short description — what's this community for?"
+            rows="2"
+          ></textarea>
+          <div class="composer-row-bottom">
+            <span class="meta-text">A folder ID will be assigned automatically</span>
+            <div class="create-community-form-actions">
+              <button id="cancelCreateCommunity" class="btn-ghost-inline">Cancel</button>
+              <button id="submitCreateCommunity" class="btn-primary composer-submit">Create folder</button>
+            </div>
+          </div>
+        </div>
+
+        <p id="communitiesLoading" class="empty-state">Loading communities...</p>
+
+        <div class="community-grid" id="communityGrid"></div>
+      </section>
+
+      <!-- ---------- RESEARCH HUB PAGE ---------- -->
+      <section class="page hidden" id="page-research">
+        <header class="page-header">
+          <div class="eyebrow">ARCHIVE</div>
+          <h1>Research Hub</h1>
+          <p class="subtitle">Papers, datasets, case studies, and field articles shared by the network.</p>
+        </header>
+
+        <button class="btn-primary" id="toggleUploadResearch">+ Upload to archive</button>
+
+        <!-- Upload form (hidden until toggled open) -->
+        <div id="uploadResearchForm" class="composer create-community-form hidden">
+          <div class="composer-tab">NEW ENTRY</div>
+          <div class="composer-row-top">
+            <input
+              type="text"
+              id="newResearchTitle"
+              class="composer-title-input"
+              placeholder="Title — e.g. Recidivism Patterns Among First-Time Offenders"
+            />
+          </div>
+          <div class="auth-field" style="margin-bottom: 12px;">
+            <label class="auth-label" for="newResearchType">Type</label>
+            <select id="newResearchType" class="auth-input">
+              <option value="Paper">Paper</option>
+              <option value="Dataset">Dataset</option>
+              <option value="Case Study">Case Study</option>
+              <option value="Article">Article</option>
+            </select>
+          </div>
+          <div class="auth-field" style="margin-bottom: 12px;">
+            <label class="auth-label" for="newResearchUrl">Link to file (optional for now — Cloudinary upload coming later)</label>
+            <input type="text" id="newResearchUrl" class="auth-input" placeholder="https://..." />
+          </div>
+          <div class="composer-row-bottom">
+            <span class="meta-text">A reference ID will be assigned automatically</span>
+            <div class="create-community-form-actions">
+              <button id="cancelUploadResearch" class="btn-ghost-inline">Cancel</button>
+              <button id="submitUploadResearch" class="btn-primary composer-submit">Add to archive</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-row">
+          <input
+            type="text"
+            id="researchSearch"
+            class="search-input"
+            placeholder="Search the archive by title or author..."
+          />
+        </div>
+
+        <p id="researchLoading" class="empty-state">Loading the archive...</p>
+
+        <div id="researchList"></div>
+
+        <button id="researchLoadMore" class="load-more-btn hidden">Load more</button>
+      </section>
+
+      <!-- ---------- CASE STUDY LIBRARY PAGE ---------- -->
+      <section class="page hidden" id="page-library">
+        <header class="page-header">
+          <div class="eyebrow">LEDGER</div>
+          <h1>Case Study Library</h1>
+          <p class="subtitle">Historical cases, landmark judgments, investigations, and prevention strategies — indexed for study.</p>
+        </header>
+
+        <div class="community-actions-row">
+          <button id="toggleAddCaseStudy" class="btn-primary">+ Add to ledger</button>
+        </div>
+
+        <!-- Add case study form (hidden until toggled open) -->
+        <div id="addCaseStudyForm" class="composer create-community-form hidden">
+          <div class="composer-tab">NEW LEDGER ENTRY</div>
+          <div class="composer-row-top">
+            <input
+              type="text"
+              id="newCaseTitle"
+              class="composer-title-input"
+              placeholder="Title — e.g. Miranda v. Arizona"
+            />
+          </div>
+          <textarea
+            id="newCaseDesc"
+            class="composer-body-input"
+            placeholder="Description — what's the significance of this case?"
+            rows="2"
+          ></textarea>
+          <div class="auth-field" style="margin-bottom: 12px;">
+            <label class="auth-label" for="newCaseCategory">Category</label>
+            <select id="newCaseCategory" class="auth-input">
+              <option value="Investigation">Investigation</option>
+              <option value="Landmark Judgment">Landmark Judgment</option>
+              <option value="Prevention Strategy">Prevention Strategy</option>
+            </select>
+          </div>
+          <div class="auth-field" style="margin-bottom: 12px;">
+            <label class="auth-label" for="newCaseJurisdiction">Jurisdiction</label>
+            <input type="text" id="newCaseJurisdiction" class="auth-input" placeholder="e.g. United States, Multinational" />
+          </div>
+          <div class="auth-field" style="margin-bottom: 12px;">
+            <label class="auth-label" for="newCaseYear">Year(s)</label>
+            <input type="text" id="newCaseYear" class="auth-input" placeholder="e.g. 1966, 2018–2021, Ongoing" />
+          </div>
+          <div class="composer-row-bottom">
+            <span class="meta-text">A case ID will be assigned automatically</span>
+            <div class="create-community-form-actions">
+              <button id="cancelAddCaseStudy" class="btn-ghost-inline">Cancel</button>
+              <button id="submitAddCaseStudy" class="btn-primary composer-submit">Add entry</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-row">
+          <input
+            type="text"
+            id="librarySearch"
+            class="search-input"
+            placeholder="Search the ledger by title or description..."
+          />
+        </div>
+
+        <p id="caseStudyLoading" class="empty-state">Loading the ledger...</p>
+
+        <div class="ledger" id="ledgerList"></div>
+
+        <button id="libraryLoadMore" class="load-more-btn hidden">Load more</button>
+      </section>
+
+      <!-- ---------- MESSAGES PAGE ---------- -->
+      <section class="page hidden" id="page-messages">
+        <header class="page-header">
+          <div class="eyebrow">PRIVATE CORRESPONDENCE</div>
+          <h1>Messages</h1>
+        </header>
+
+        <div class="messages-layout">
+
+          <!-- Conversation list (left pane) -->
+          <div class="conversation-list" id="conversationList">
+            <div class="conversation-search">
+              <input type="text" id="conversationSearch" class="conversation-search-input" placeholder="Search conversations..." />
+            </div>
+            <p id="conversationsLoading" class="empty-state" style="padding: 20px; font-size: 12px;">Loading...</p>
+          </div>
+
+          <!-- Active thread (right pane) -->
+          <div class="message-thread" id="messageThread">
+
+            <!-- Empty state: shown when no conversation is selected -->
+            <div class="message-thread-empty" id="threadEmpty">
+              <div class="thread-empty-icon">💬</div>
+              <p class="thread-empty-text">Select a conversation to start reading</p>
+            </div>
+
+            <!-- Active conversation: shown when a thread is loaded -->
+            <div class="thread-active hidden" id="threadActive">
+
+              <div class="message-thread-header" id="threadHeader">
+                <div class="thread-avatar small" id="threadContactAvatar"></div>
+                <div class="message-thread-header-meta">
+                  <div class="conversation-name" id="threadContactName"></div>
+                  <div class="thread-header-ref" id="threadContactRole"></div>
+                </div>
+              </div>
+
+              <div class="message-bubbles" id="messageBubbles"></div>
+
+              <div class="typing-indicator hidden" id="typingIndicator">
+                <span class="typing-name" id="typingName"></span>
+                <span class="typing-dots"><span></span><span></span><span></span></span>
+              </div>
+
+              <div class="message-composer">
+                <input
+                  type="text"
+                  id="messageInput"
+                  class="message-input"
+                  placeholder="Write a message..."
+                />
+                <button id="messageSendBtn" class="message-transmit-btn">Send →</button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ---------- NOTIFICATIONS PAGE ---------- -->
+      <section class="page hidden" id="page-notifications">
+        <header class="page-header">
+          <div class="eyebrow">ACTIVITY LOG</div>
+          <h1>Notifications</h1>
+        </header>
+
+        <div class="notif-actions">
+          <button id="markAllReadBtn" class="link-text" style="background:none;border:none;cursor:pointer;font-family:inherit;">Mark all as read</button>
+        </div>
+
+        <p id="notifLoading" class="empty-state">Loading notifications...</p>
+
+        <div class="notif-list" id="notifList"></div>
+      </section>
+
+      <!-- ---------- EVENTS PAGE ---------- -->
+      <section class="page hidden" id="page-events">
+        <header class="page-header">
+          <div class="eyebrow">FIELD EVENTS</div>
+          <h1>Events</h1>
+          <p class="subtitle">Conferences, seminars, workshops, and webinars from across the network.</p>
+        </header>
+
+        <div class="community-actions-row">
+          <button id="toggleCreateEvent" class="btn-primary">+ Create Event</button>
+        </div>
+
+        <!-- Create event form (hidden until toggled open) -->
+        <div id="createEventForm" class="composer create-community-form hidden">
+          <div class="composer-tab">NEW EVENT FILING</div>
+          <div class="composer-row-top">
+            <input
+              type="text"
+              id="newEventTitle"
+              class="composer-title-input"
+              placeholder="Event title — e.g. West Africa Cybercrime Summit 2026"
+            />
+          </div>
+          <div class="auth-field" style="margin-bottom:12px;">
+            <label class="auth-label" for="newEventType">Type</label>
+            <select id="newEventType" class="auth-input">
+              <option value="Conference">Conference</option>
+              <option value="Seminar">Seminar</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Webinar">Webinar</option>
+            </select>
+          </div>
+          <textarea
+            id="newEventDesc"
+            class="composer-body-input"
+            placeholder="What is this event about?"
+            rows="2"
+          ></textarea>
+          <div class="auth-field" style="margin-bottom:12px;">
+            <label class="auth-label" for="newEventDate">Date &amp; Time</label>
+            <input type="datetime-local" id="newEventDate" class="auth-input" />
+          </div>
+          <div class="auth-field" style="margin-bottom:12px;">
+            <label class="auth-label" for="newEventLocation">Location</label>
+            <input type="text" id="newEventLocation" class="auth-input" placeholder="City, Country — or type Online" />
+          </div>
+          <div class="auth-field" style="margin-bottom:12px;">
+            <label class="auth-label" for="newEventLink">External link (optional)</label>
+            <input type="text" id="newEventLink" class="auth-input" placeholder="https://registration-link.com" />
+          </div>
+          <div class="composer-row-bottom">
+            <span class="meta-text">You will be listed as organiser</span>
+            <div class="create-community-form-actions">
+              <button id="cancelCreateEvent" class="btn-ghost-inline">Cancel</button>
+              <button id="submitCreateEvent" class="btn-primary composer-submit">File event</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upcoming events -->
+        <div class="events-section">
+          <div class="events-section-label">
+            <span class="eyebrow" style="color: var(--slate);">UPCOMING</span>
+          </div>
+          <p id="upcomingLoading" class="empty-state">Loading events...</p>
+          <div class="event-grid" id="upcomingGrid"></div>
+        </div>
+
+        <!-- Past events -->
+        <div class="events-section" id="pastEventsSection" style="margin-top: 32px;">
+          <div class="events-section-label">
+            <span class="eyebrow" style="color: var(--slate-soft);">PAST EVENTS</span>
+          </div>
+          <p id="pastLoading" class="empty-state hidden">Loading...</p>
+          <div class="event-grid past" id="pastGrid"></div>
+        </div>
+
+      </section>
+
+      <!-- ---------- PROFILE PAGE ---------- -->
+      <section class="page hidden" id="page-profile">
+        <header class="page-header">
+          <div class="eyebrow">RECORD ON FILE</div>
+          <h1>Profile</h1>
+        </header>
+
+        <p id="profileLoading" class="empty-state">Loading profile...</p>
+
+        <!-- VIEW MODE -->
+        <div id="profileView" class="hidden">
+
+          <div class="profile-card">
+            <div class="profile-avatar" id="profileAvatar"></div>
+            <div class="profile-main">
+              <div class="profile-top">
+                <div>
+                  <div class="profile-name" id="profileName"></div>
+                  <div class="profile-subtitle" id="profileSubtitle"></div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                  <span class="case-stamp" id="profileUserId"></span>
+                  <button id="editProfileBtn" class="btn-ghost-inline" style="font-size:11px;padding:5px 10px;">Edit profile</button>
+                </div>
+              </div>
+              <p class="profile-bio" id="profileBio"></p>
+            </div>
+          </div>
+
+          <div class="profile-grid">
+            <div>
+              <div class="section-label">Research Areas</div>
+              <div class="chip-row" id="profileResearchAreas">
+                <span class="meta-text">None listed yet.</span>
+              </div>
+            </div>
+            <div>
+              <div class="section-label">Skills</div>
+              <div class="chip-row" id="profileSkills">
+                <span class="meta-text">None listed yet.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible posts section -->
+          <div class="profile-posts-section">
+            <button id="toggleProfilePosts" class="profile-posts-toggle">
+              <span>Show my posts</span>
+              <span class="profile-posts-arrow">↓</span>
+            </button>
+            <div id="profilePostsList" class="hidden">
+              <p id="profilePostsLoading" class="empty-state hidden">Loading posts...</p>
+            </div>
+          </div>
+
+          <!-- Collapsible saved posts section -->
+          <div class="profile-posts-section">
+            <button id="toggleSavedPosts" class="profile-posts-toggle">
+              <span>Show saved posts</span>
+              <span class="profile-posts-arrow">↓</span>
+            </button>
+            <div id="savedPostsList" class="hidden">
+              <p id="savedPostsLoading" class="empty-state hidden">Loading saved posts...</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- EDIT MODE -->
+        <div id="profileEdit" class="hidden">
+
+          <div class="composer" style="max-width:760px;">
+            <div class="composer-tab">EDITING RECORD</div>
+
+            <div class="auth-field" style="margin-bottom:14px;">
+              <label class="auth-label" for="editName">Full name</label>
+              <input type="text" id="editName" class="auth-input" placeholder="Your name" />
+            </div>
+
+            <div class="auth-field" style="margin-bottom:14px;">
+              <label class="auth-label" for="editRole">Role on file</label>
+              <select id="editRole" class="auth-input">
+                <option value="Student">Student</option>
+                <option value="Researcher">Researcher</option>
+                <option value="Lecturer">Lecturer</option>
+                <option value="Law Enforcement">Law Enforcement</option>
+                <option value="Military Personnel">Military Personnel</option>
+                <option value="Legal Practitioner">Legal Practitioner</option>
+                <option value="Cybersecurity Specialist">Cybersecurity Specialist</option>
+                <option value="Community Member">Community Member</option>
+              </select>
+            </div>
+
+            <div class="auth-field" style="margin-bottom:14px;">
+              <label class="auth-label" for="editBio">Bio</label>
+              <textarea id="editBio" class="composer-body-input" rows="3" placeholder="Tell the network about your work and interests..."></textarea>
+            </div>
+
+            <div class="auth-field" style="margin-bottom:14px;">
+              <label class="auth-label" for="editInstitution">Institution</label>
+              <input type="text" id="editInstitution" class="auth-input" placeholder="e.g. University of Edinburgh" />
+            </div>
+
+            <div class="auth-field" style="margin-bottom:14px;">
+              <label class="auth-label" for="editResearchAreas">Research Areas <span style="font-weight:400;text-transform:none;font-family:var(--font-sans);font-size:11px;">(comma-separated)</span></label>
+              <input type="text" id="editResearchAreas" class="auth-input" placeholder="e.g. Cybercrime, Victimology, Youth Justice" />
+            </div>
+
+            <div class="auth-field" style="margin-bottom:14px;">
+              <label class="auth-label" for="editSkills">Skills <span style="font-weight:400;text-transform:none;font-family:var(--font-sans);font-size:11px;">(comma-separated)</span></label>
+              <input type="text" id="editSkills" class="auth-input" placeholder="e.g. Qualitative Analysis, SPSS, Digital Forensics" />
+            </div>
+
+            <div class="composer-row-bottom">
+              <span class="meta-text">Changes save to your case file</span>
+              <div class="create-community-form-actions">
+                <button id="cancelEditProfile" class="btn-ghost-inline">Cancel</button>
+                <button id="saveEditProfile" class="btn-primary composer-submit">Save changes</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ===================== VIEW ANOTHER USER'S PROFILE ===================== -->
+      <!-- Not linked from the sidebar nav — reached by clicking a post
+           author's name or a "joined a community" notification. -->
+      <section class="page hidden" id="page-user-profile">
+        <a href="#" id="userProfileBack" class="back-btn-icon" aria-label="Back" title="Back">←</a>
+
+        <header class="page-header">
+          <div class="eyebrow">RECORD ON FILE</div>
+          <h1>Profile</h1>
+        </header>
+
+        <p id="userProfileLoading" class="empty-state">Loading profile...</p>
+
+        <div id="userProfileView" class="hidden">
+          <div class="profile-card">
+            <div class="profile-avatar" id="userProfileAvatar"></div>
+            <div class="profile-main">
+              <div class="profile-top">
+                <div>
+                  <div class="profile-name" id="userProfileName"></div>
+                  <div class="profile-subtitle" id="userProfileSubtitle"></div>
+                </div>
+                <button id="userProfileMessageBtn" class="btn-primary" style="margin-bottom:0;">Message</button>
+              </div>
+              <p class="profile-bio" id="userProfileBio"></p>
+            </div>
+          </div>
+
+          <div class="profile-grid">
+            <div>
+              <div class="section-label">Research Areas</div>
+              <div class="chip-row" id="userProfileResearchAreas">
+                <span class="meta-text">None listed yet.</span>
+              </div>
+            </div>
+            <div>
+              <div class="section-label">Skills</div>
+              <div class="chip-row" id="userProfileSkills">
+                <span class="meta-text">None listed yet.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toastStack"></div>
+
+  <script src="config.js?v=1"></script>
+  <script src="script.js?v=1"></script>
+</body>
+</html>

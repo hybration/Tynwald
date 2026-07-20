@@ -1,0 +1,117 @@
+/* ===========================================
+   TYNWALD — Privacy Policy / Terms of Service
+   Builds on top of styles.css and home.css tokens
+   =========================================== */
+
+.legal-wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 56px 32px 80px;
+}
+
+.legal-header {
+  margin-bottom: 40px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.legal-header .eyebrow {
+  margin-bottom: 10px;
+}
+
+.legal-header h1 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 34px;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+
+.legal-updated {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--slate-soft);
+  letter-spacing: 0.02em;
+}
+
+.legal-notice {
+  background: var(--manila);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  padding: 16px 18px;
+  margin: 24px 0 40px;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.legal-section {
+  margin-bottom: 36px;
+}
+
+.legal-section h2 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 19px;
+  color: var(--ink);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.legal-section h2 .legal-num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--slate-soft);
+  font-weight: 400;
+}
+
+.legal-section p {
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  margin: 0 0 14px;
+}
+
+.legal-section ul {
+  margin: 0 0 14px;
+  padding-left: 20px;
+}
+
+.legal-section li {
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  margin-bottom: 6px;
+}
+
+.legal-section strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.legal-section a {
+  color: var(--slate);
+  text-decoration: underline;
+}
+
+.legal-cross-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .legal-wrap {
+    padding: 40px 20px 60px;
+  }
+
+  .legal-header h1 {
+    font-size: 26px;
+  }
+}

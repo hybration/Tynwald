@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tynwald — Cybercrime Community</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=1" />
+<link rel="stylesheet" href="post.css?v=1" />
+<link rel="stylesheet" href="community-detail.css?v=1" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- ===================== SIDEBAR (same as index.html) ===================== -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-row">
+          <a href="home.html" class="brand-name-link"><div class="brand-name">Tynwald</div></a>
+          <button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button>
+          <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">☰</button>
+        </div>
+        <div class="brand-tagline">KNOWLEDGE · JUSTICE · COMMUNITY</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <nav class="nav">
+        <a class="nav-item" href="index.html#feed">
+          <span class="nav-abbr">FD</span><span>Feed</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item active" href="index.html#communities">
+          <span>Communities</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#research">
+          <span class="nav-abbr">RH</span><span>Research Hub</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#library">
+          <span class="nav-abbr">CL</span><span>Case Study Library</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#messages">
+          <span class="nav-abbr">MS</span><span>Messages</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#notifications">
+          <span class="nav-abbr">NT</span><span>Notifications</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#profile">
+          <span class="nav-abbr">PR</span><span>Profile</span><span class="nav-dot">●</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle night ops mode">
+          <span class="theme-toggle-dot"></span>
+          <span class="theme-toggle-label">Night Ops</span>
+        </button>
+        <div class="divider"></div>
+        <div class="user-card">
+          <div class="avatar" id="sidebarAvatar"></div>
+          <div>
+            <div class="user-name" id="sidebarUserName"></div>
+            <div class="user-role" id="sidebarUserRole"></div>
+          </div>
+          <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out">⏻</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===================== COMMUNITY DETAIL CONTENT ===================== -->
+    <main class="content">
+
+      <a href="index.html" class="back-link">← Back to Communities</a>
+
+      <p id="communityLoading" class="empty-state">Loading community...</p>
+
+      <!-- Folder-style header -->
+      <div class="folder-header hidden" id="folderHeader">
+        <div class="folder-tab" id="folderTab">COM-002</div>
+        <div class="folder-header-top">
+          <div>
+            <h1 class="folder-title" id="folderTitle">Cybercrime</h1>
+            <p class="folder-desc" id="folderDesc">Digital fraud, ransomware trends, and cyber-forensics — for researchers, practitioners, and students tracking the evolving threat landscape.</p>
+          </div>
+          <button class="btn-primary join-btn" id="joinBtn" data-joined="false">+ Join Community</button>
+        </div>
+        <div class="divider"></div>
+        <div class="folder-stats">
+          <div class="folder-stat">
+            <span class="stat-value" id="folderMemberCount">0</span>
+            <span class="meta-text">members</span>
+          </div>
+          <div class="folder-stat">
+            <span class="stat-value">—</span>
+            <span class="meta-text">posts this month</span>
+          </div>
+          <div class="folder-stat">
+            <span class="stat-value" id="folderEstablished">—</span>
+            <span class="meta-text">established</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="community-layout hidden" id="communityLayoutBody">
+
+        <!-- Posts column -->
+        <div class="community-posts">
+
+          <!-- Mini composer, scoped to this community -->
+          <div class="composer" id="communityComposer" style="max-width: none;">
+            <div class="composer-tab">NEW ENTRY IN THIS FOLDER</div>
+            <div class="composer-row-top">
+              <input
+                type="text"
+                id="communityPostTitle"
+                class="composer-title-input"
+                placeholder="Title — what's the discussion or finding?"
+              />
+            </div>
+            <textarea
+              id="communityPostBody"
+              class="composer-body-input"
+              placeholder="Add detail, context, or a question for this community..."
+              rows="3"
+            ></textarea>
+            <div class="composer-row-bottom">
+              <select id="communityPostTag" class="composer-tag-select">
+                <option value="Cybercrime">Cybercrime</option>
+                <option value="Juvenile Justice">Juvenile Justice</option>
+                <option value="Community Policing">Community Policing</option>
+                <option value="Victimology">Victimology</option>
+                <option value="Forensic Science">Forensic Science</option>
+                <option value="Criminal Law">Criminal Law</option>
+              </select>
+              <button id="communityPostSubmit" class="btn-primary composer-submit">File post</button>
+            </div>
+          </div>
+
+          <div class="filter-row">
+            <span class="filter-chip active">Recent</span>
+            <span class="filter-chip">Most discussed</span>
+            <span class="filter-chip">Active alerts</span>
+          </div>
+
+          <p id="communityPostsLoading" class="empty-state">Loading posts...</p>
+
+          <div id="communityPostsList"></div>
+
+        </div>
+
+        <!-- Sidebar column -->
+        <div class="community-sidebar">
+
+          <div class="sidebar-box">
+            <div class="section-label">About this folder</div>
+            <p class="sidebar-box-text">
+              Created for sharing research, incident analysis, and field experience
+              related to digital crime. Posts are expected to cite sources where
+              possible. Moderated by senior contributors.
+            </p>
+          </div>
+
+          <div class="sidebar-box">
+            <div class="section-label">Moderators</div>
+            <div class="mod-list" id="moderatorsList">
+              <p class="meta-text">Loading...</p>
+            </div>
+          </div>
+
+          <div class="sidebar-box">
+            <div class="section-label">Related communities</div>
+            <p class="sidebar-box-text">Not available yet — this feature is still being built.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toastStack"></div>
+
+  <script src="config.js?v=1"></script>
+  <script src="script.js?v=1"></script>
+
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tynwald — Sign Up / Log In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=1" />
+<link rel="stylesheet" href="auth.css?v=1" />
+</head>
+<body class="auth-body">
+
+  <div class="intake">
+
+    <!-- ===================== LEFT: CASE FILE PANEL ===================== -->
+    <div class="intake-left">
+
+      <a href="home.html" class="intake-brand-link">
+        <div class="intake-brand">Tynwald</div>
+      </a>
+
+      <div class="intake-stamp-row">
+        <span class="intake-stamp">FILE NO. TYN-0001</span>
+        <span class="tag tag-red intake-tag">Intake</span>
+      </div>
+
+      <h1 class="intake-headline">Every member<br/>gets a case file.</h1>
+
+      <p class="intake-copy">
+        Tynwald keeps a record on every contributor to the network —
+        your research, your communities, your standing. This is where
+        yours opens.
+      </p>
+
+      <div class="intake-divider"></div>
+
+      <ul class="intake-list">
+        <li><span class="intake-list-marker">01</span> Verified by role — student to law enforcement</li>
+        <li><span class="intake-list-marker">02</span> One file, indexed across every community you join</li>
+        <li><span class="intake-list-marker">03</span> Built for the field, not for the feed</li>
+      </ul>
+
+      <div class="intake-footer-stamp">
+        <span class="meta-text">Processing new entries</span>
+        <span class="intake-pulse"></span>
+      </div>
+    </div>
+
+    <!-- ===================== RIGHT: FORM PANEL ===================== -->
+    <div class="intake-right">
+
+      <div class="intake-form-wrap">
+
+        <div class="intake-tabs">
+          <button class="intake-tab active" id="tabSignup" data-mode="signup">Open a new file</button>
+          <button class="intake-tab" id="tabLogin" data-mode="login">I already have one</button>
+        </div>
+
+        <p id="authError" class="auth-error hidden"></p>
+
+        <!-- SIGN UP FORM -->
+        <form id="signupForm" class="auth-form">
+          <div class="auth-field">
+            <label class="auth-label" for="signupName">Full name</label>
+            <input type="text" id="signupName" class="auth-input" required />
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label" for="signupEmail">Email</label>
+            <input type="email" id="signupEmail" class="auth-input" required />
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label" for="signupPassword">Password</label>
+            <div class="password-field">
+              <input type="password" id="signupPassword" class="auth-input" placeholder="At least 8 characters" required minlength="8" />
+              <button type="button" class="password-toggle" data-target="signupPassword" aria-label="Show password">Show</button>
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label" for="signupRole">Role on file</label>
+            <select id="signupRole" class="auth-input">
+              <option value="Student">Student</option>
+              <option value="Researcher">Researcher</option>
+              <option value="Lecturer">Lecturer</option>
+              <option value="Law Enforcement">Law Enforcement</option>
+              <option value="Military Personnel">Military Personnel</option>
+              <option value="Legal Practitioner">Legal Practitioner</option>
+              <option value="Cybersecurity Specialist">Cybersecurity Specialist</option>
+              <option value="Community Member">Community Member</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn-primary auth-submit" id="signupSubmit">Open my file</button>
+
+          <p class="meta-text" style="display:block; margin-top:12px; font-size:11.5px; line-height:1.5;">
+            By opening a file, you agree to Tynwald's <a href="terms.html" target="_blank" style="color:var(--slate); font-weight:600;">Terms of Service</a> and <a href="privacy.html" target="_blank" style="color:var(--slate); font-weight:600;">Privacy Policy</a>.
+          </p>
+        </form>
+
+        <!-- SIGNUP STEP 2: EMAIL VERIFICATION CODE -->
+        <form id="verifyForm" class="auth-form hidden">
+          <div class="intake-stamp-row" style="margin-top: 0; margin-bottom: 18px;">
+            <span class="intake-stamp">VERIFICATION PENDING</span>
+          </div>
+
+          <p class="meta-text" style="display:block; margin-bottom: 18px; line-height: 1.5;">
+            A 6-digit code was sent to <strong id="verifyEmailDisplay"></strong>. Enter it below to open your file.
+          </p>
+
+          <div class="auth-field">
+            <label class="auth-label" for="verifyCode">Verification code</label>
+            <input type="text" id="verifyCode" class="auth-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required />
+          </div>
+
+          <button type="submit" class="btn-primary auth-submit" id="verifySubmit">Verify &amp; open my file</button>
+
+          <div style="display:flex; justify-content:space-between; margin-top:14px;">
+            <button type="button" id="verifyBack" class="verify-link-btn">← Back</button>
+            <button type="button" id="verifyResend" class="verify-link-btn">Resend code</button>
+          </div>
+        </form>
+
+        <!-- LOG IN FORM -->
+        <form id="loginForm" class="auth-form hidden">
+          <div class="auth-field">
+            <label class="auth-label" for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" class="auth-input" required />
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label" for="loginPassword">Password</label>
+            <div class="password-field">
+              <input type="password" id="loginPassword" class="auth-input" required />
+              <button type="button" class="password-toggle" data-target="loginPassword" aria-label="Show password">Show</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary auth-submit" id="loginSubmit">Retrieve my file</button>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script src="config.js?v=1"></script>
+  <script src="auth.js?v=1"></script>
+</body>
+</html>

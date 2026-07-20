@@ -1,0 +1,13 @@
+/* ===========================================
+   TYNWALD — Case study detail page
+   Deliberately thin: this page reuses .thread-post, .thread-title,
+   .thread-body, .thread-actions, .reply-composer, .comment-thread,
+   and .comment styling from post.css as-is. Only the few things that
+   don't already have a home get defined here.
+   =========================================== */
+
+#csMeta {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--slate-soft);
+}

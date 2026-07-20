@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tynwald — Thread</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=1" />
+<link rel="stylesheet" href="post.css?v=1" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- ===================== SIDEBAR (same as index.html) ===================== -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-row">
+          <a href="home.html" class="brand-name-link"><div class="brand-name">Tynwald</div></a>
+          <button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button>
+          <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">☰</button>
+        </div>
+        <div class="brand-tagline">KNOWLEDGE · JUSTICE · COMMUNITY</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <nav class="nav">
+        <a class="nav-item" href="index.html#feed">
+          <span class="nav-abbr">FD</span><span>Feed</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#communities">
+          <span class="nav-abbr">CM</span><span>Communities</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#research">
+          <span class="nav-abbr">RH</span><span>Research Hub</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#library">
+          <span class="nav-abbr">CL</span><span>Case Study Library</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#messages">
+          <span class="nav-abbr">MS</span><span>Messages</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#notifications">
+          <span class="nav-abbr">NT</span><span>Notifications</span><span class="nav-dot">●</span>
+        </a>
+        <a class="nav-item" href="index.html#profile">
+          <span class="nav-abbr">PR</span><span>Profile</span><span class="nav-dot">●</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle night ops mode">
+          <span class="theme-toggle-dot"></span>
+          <span class="theme-toggle-label">Night Ops</span>
+        </button>
+        <div class="divider"></div>
+        <div class="user-card">
+          <div class="avatar" id="sidebarAvatar"></div>
+          <div>
+            <div class="user-name" id="sidebarUserName"></div>
+            <div class="user-role" id="sidebarUserRole"></div>
+          </div>
+          <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out">⏻</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===================== THREAD CONTENT ===================== -->
+    <main class="content">
+
+      <a href="index.html" class="back-link">← Back to Feed</a>
+
+      <p id="threadLoading" class="empty-state">Loading thread...</p>
+
+      <!-- Original post, full version -->
+      <article class="thread-post hidden" id="threadPost">
+        <div class="post-top">
+          <span class="case-stamp" id="threadCaseId"></span>
+          <span class="tag tag-outline" id="threadStatus"></span>
+        </div>
+        <div class="post-meta">
+          <div class="thread-avatar" id="threadAvatar"></div>
+          <div>
+            <a href="#" class="post-author" id="threadAuthor"></a>
+            <div class="post-inst" id="threadAuthorInst"></div>
+          </div>
+          <span class="post-time thread-time" id="threadTime"></span>
+        </div>
+
+        <h1 class="thread-title" id="threadTitle"></h1>
+
+        <div class="thread-body" id="threadBody"></div>
+
+        <div class="thread-actions">
+          <button class="thread-action-btn like-btn" id="threadLikeBtn" data-liked="false" data-count="0"><svg class="like-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.7-10.2-9.1C.2 9.1 1 5.4 4.4 4c2.5-1 5.1 0 6.7 2.1L12 7.2l.9-1.1C14.5 4 17.1 3 19.6 4c3.4 1.4 4.2 5.1 2.6 7.9C19.5 16.3 12 21 12 21z"/></svg><span class="like-count">0</span></button>
+          <span class="thread-action-btn" id="threadReplyCount">0 replies</span>
+          <button type="button" class="thread-action-btn share-btn" id="threadShareBtn" title="Share"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"></line><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"></line></svg> Share</button>
+          <button type="button" class="thread-action-btn bookmark-btn" id="threadBookmarkBtn" data-saved="false" title="Save"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg> Save</button>
+          <span class="tag tag-outline" id="threadTag" style="margin-left: auto;"></span>
+        </div>
+      </article>
+
+      <!-- Reply composer -->
+      <div class="reply-composer hidden" id="replyComposer">
+        <div class="thread-avatar small" id="replyComposerAvatar">AO</div>
+        <textarea id="replyInput" class="reply-input" placeholder="Add to the discussion..." rows="2"></textarea>
+        <button id="replySubmit" class="btn-primary">Post reply</button>
+      </div>
+
+      <!-- Comment thread -->
+      <div class="comment-thread hidden" id="commentThreadWrap">
+
+        <div class="comment-section-label" id="commentCountLabel">0 replies</div>
+
+        <div id="commentList"></div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toastStack"></div>
+
+  <script src="config.js?v=1"></script>
+  <script src="script.js?v=1"></script>
+
+</body>
+</html>
