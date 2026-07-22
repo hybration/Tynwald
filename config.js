@@ -5,6 +5,6 @@
 // hardcoded localhost string, so there's only one place to update.
 // ===========================================
 
-const API_BASE_URL = 'https://tynwald-backend.onrender.com';
+const API_BASE_URL = 'https://tynwald-backend.onrender.com/api';
 const CLOUDINARY_CLOUD_NAME = 'jmzj4bhy';
 const CLOUDINARY_UPLOAD_PRESET = 'tynwald_uploads';
