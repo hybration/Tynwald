@@ -207,7 +207,10 @@ body {
   padding: 28px 0 20px;
   display: flex;
   flex-direction: column;
-  position: relative;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
   box-shadow: 1px 0 0 var(--gold-dim), 6px 0 24px -18px var(--gold-glow);
   transition: width 0.22s ease;
 }
@@ -1906,14 +1909,26 @@ body {
     flex-direction: column;
     padding: 16px 0;
     border-right: none;
-    border-bottom: 1px solid var(--line);
+    border-bottom: none;
     position: relative;
+    height: auto;
+    overflow: visible;
   }
 
   .brand {
-    padding: 0 16px;
-    position: relative;
-    z-index: 60; /* stays above the sliding drawer and its backdrop */
+    padding: 14px 16px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 70; /* stays above the sliding drawer and its backdrop */
+    background: var(--manila);
+    border-bottom: 1px solid var(--line);
+    transition: transform 0.25s ease;
+  }
+
+  .brand.scroll-hidden {
+    transform: translateY(-100%);
   }
 
   .mobile-menu-toggle {
@@ -1995,7 +2010,7 @@ body {
   }
 
   .content {
-    padding: 24px 18px;
+    padding: 92px 18px 24px;
   }
 
   .page-header h1 {
@@ -2005,7 +2020,7 @@ body {
 
 @media (max-width: 480px) {
   .content {
-    padding: 18px 14px;
+    padding: 92px 14px 18px;
   }
 
   .page-header h1 {

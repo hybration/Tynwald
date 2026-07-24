@@ -55,6 +55,30 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ===================== MOBILE: HIDE NAV WHILE SCROLLING =====================
+  // On mobile only, the brand/toggle bar hides while actively scrolling
+  // (in either direction) and reappears once scrolling settles — same
+  // pattern as X's mobile header. Desktop is untouched; the sidebar
+  // there is sticky instead (see .sidebar in styles.css).
+  const mobileBrandBar = document.querySelector(".brand");
+  let scrollHideTimeout = null;
+
+  if (mobileBrandBar) {
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (window.innerWidth > 760) return; // desktop: no-op, sidebar is sticky instead
+        mobileBrandBar.classList.add("scroll-hidden");
+        clearTimeout(scrollHideTimeout);
+        scrollHideTimeout = setTimeout(() => {
+          mobileBrandBar.classList.remove("scroll-hidden");
+        }, 400);
+      },
+      { passive: true }
+    );
+  }
+
+
   // ===================== LOGOUT =====================
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
