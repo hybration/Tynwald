@@ -2676,3 +2676,93 @@ html[data-theme="dark"] .theme-toggle-dot {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ===================== SHARED CONFIRM MODAL (delete actions) ===================== */
+.confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 13, 11, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.confirm-modal {
+  background: var(--paper);
+  border: 1px solid var(--gold-dim);
+  box-shadow: 0 0 40px -10px var(--gold-glow), 0 20px 50px -20px rgba(0, 0, 0, 0.5);
+  padding: 28px 26px 22px;
+  max-width: 340px;
+  width: 100%;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+}
+
+.confirm-modal-icon {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(162, 59, 46, 0.12);
+  color: var(--red);
+  border: 1px solid rgba(162, 59, 46, 0.35);
+  border-radius: 50%;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 14px;
+}
+
+.confirm-modal-message {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-modal-confirm {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  padding: 9px 16px;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  transition: box-shadow 0.15s ease;
+}
+
+.confirm-modal-confirm:hover {
+  box-shadow: 0 0 16px -4px rgba(162, 59, 46, 0.5);
+}
+
+/* ===================== DELETE BUTTON (icon, matches share/bookmark) ===================== */
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--slate-soft);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.delete-btn:hover {
+  color: var(--red);
+}
+
+.delete-btn:active {
+  transform: scale(0.94);
+}

@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="Images/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1" />
+<link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
 
@@ -664,9 +664,21 @@
     </main>
   </div>
 
+  <!-- ===================== SHARED CONFIRM MODAL (delete actions) ===================== -->
+  <div class="confirm-modal-overlay hidden" id="confirmModalOverlay">
+    <div class="confirm-modal">
+      <div class="confirm-modal-icon">!</div>
+      <p class="confirm-modal-message" id="confirmModalMessage"></p>
+      <div class="confirm-modal-actions">
+        <button class="btn-ghost-inline" id="confirmModalCancel">Cancel</button>
+        <button class="confirm-modal-confirm" id="confirmModalConfirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-stack" id="toastStack"></div>
 
-  <script src="config.js?v=1"></script>
-  <script src="script.js?v=1"></script>
+  <script src="config.js?v=2"></script>
+  <script src="script.js?v=2"></script>
 </body>
 </html>

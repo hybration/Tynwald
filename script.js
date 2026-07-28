@@ -144,6 +144,54 @@ document.addEventListener("DOMContentLoaded", () => {
     if (role) el.title = role;
   }
 
+  // ===================== TRASH ICON =====================
+  function trashIcon() {
+    return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>`;
+  }
+
+  // ===================== SHARED CONFIRM MODAL =====================
+  // Used for every delete action across the app instead of window.confirm(),
+  // so it matches the rest of the UI. Falls back to window.confirm() on
+  // any page that somehow doesn't have the modal markup.
+  function confirmDialog(message) {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById("confirmModalOverlay");
+      const messageEl = document.getElementById("confirmModalMessage");
+      const confirmBtn = document.getElementById("confirmModalConfirm");
+      const cancelBtn = document.getElementById("confirmModalCancel");
+
+      if (!overlay || !messageEl || !confirmBtn || !cancelBtn) {
+        resolve(window.confirm(message));
+        return;
+      }
+
+      messageEl.textContent = message;
+      overlay.classList.remove("hidden");
+
+      function cleanup(result) {
+        overlay.classList.add("hidden");
+        confirmBtn.removeEventListener("click", onConfirm);
+        cancelBtn.removeEventListener("click", onCancel);
+        overlay.removeEventListener("click", onOverlayClick);
+        resolve(result);
+      }
+      function onConfirm() {
+        cleanup(true);
+      }
+      function onCancel() {
+        cleanup(false);
+      }
+      function onOverlayClick(event) {
+        if (event.target === overlay) cleanup(false);
+      }
+
+      confirmBtn.addEventListener("click", onConfirm);
+      cancelBtn.addEventListener("click", onCancel);
+      overlay.addEventListener("click", onOverlayClick);
+    });
+  }
+
+
   // ===================== BOOKMARK ICON =====================
   function bookmarkIcon(saved) {
     return `<svg viewBox="0 0 24 24" width="14" height="14" fill="${saved ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
@@ -457,6 +505,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const liked = post.likedByMe === true;
     const likeCount = post.likes ? post.likes.length : 0;
+    const currentUser = getStoredUser();
+    const isOwnPost = currentUser && post.author?._id === currentUser.id;
 
     article.innerHTML = `
       <div class="post-top">
@@ -476,6 +526,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <button class="like-btn feed-like-btn" data-liked="${liked}" data-count="${likeCount}">${likeButtonHTML(liked, likeCount)}</button>
         <button type="button" class="share-btn" title="Share">${shareIcon()}</button>
         <button type="button" class="bookmark-btn" data-saved="${post.savedByMe === true}" title="Save">${bookmarkIcon(post.savedByMe === true)}</button>
+        ${isOwnPost ? `<button type="button" class="delete-btn" title="Delete post">${trashIcon()}</button>` : ""}
         <span class="tag tag-outline"></span>
         <span class="meta-text"></span>
         <a href="post.html?id=${post._id}" class="link-text">Open file →</a>
@@ -757,6 +808,34 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!authorLink) return;
     event.preventDefault();
     openUserProfile(authorLink.dataset.userId);
+  });
+
+  // ===================== DELETE POST (feed card) =====================
+  document.body.addEventListener("click", async (event) => {
+    const deleteBtn = event.target.closest(".post-card .delete-btn");
+    if (!deleteBtn) return;
+    event.preventDefault();
+
+    const postCard = deleteBtn.closest(".post-card[data-post-id]");
+    if (!postCard) return;
+
+    const confirmed = await confirmDialog("Delete this post? This can't be undone, and any comments on it will be deleted too.");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/posts/${postCard.dataset.postId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const data = await safeJson(response);
+      if (!response.ok) throw new Error(data.message || "Could not delete this post.");
+
+      postCard.remove();
+      showToast("Post deleted.", "success");
+    } catch (err) {
+      console.error("Delete post failed:", err);
+      showToast(err.message || "Something went wrong.", "error");
+    }
   });
 
   // ===================== BOOKMARK / SAVE BUTTONS =====================
@@ -1050,6 +1129,32 @@ document.addEventListener("DOMContentLoaded", () => {
         bookmarkBtn.innerHTML = `${bookmarkIcon(saved)} Save`;
       }
 
+      const deleteBtn = document.getElementById("threadDeleteBtn");
+      if (deleteBtn) {
+        const currentUser = getStoredUser();
+        const isOwnPost = currentUser && post.author?._id === currentUser.id;
+        deleteBtn.classList.toggle("hidden", !isOwnPost);
+        deleteBtn.onclick = async () => {
+          const confirmed = await confirmDialog("Delete this post? This can't be undone, and any comments on it will be deleted too.");
+          if (!confirmed) return;
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/posts/${post._id}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            const data = await safeJson(response);
+            if (!response.ok) throw new Error(data.message || "Could not delete this post.");
+
+            showToast("Post deleted.", "success");
+            window.location.href = "index.html#feed";
+          } catch (err) {
+            console.error("Delete post failed:", err);
+            showToast(err.message || "Something went wrong.", "error");
+          }
+        };
+      }
+
       await loadComments("post", post._id);
 
       if (threadLoading) threadLoading.classList.add("hidden");
@@ -1134,6 +1239,31 @@ document.addEventListener("DOMContentLoaded", () => {
       if (currentUser && replyAvatar) {
         replyAvatar.textContent = getInitials(currentUser.name);
         applyRoleRing(replyAvatar, currentUser.role);
+      }
+
+      const csDeleteBtn = document.getElementById("csDeleteBtn");
+      if (csDeleteBtn) {
+        const isOwnEntry = currentUser && caseStudy.addedBy?._id === currentUser.id;
+        csDeleteBtn.classList.toggle("hidden", !isOwnEntry);
+        csDeleteBtn.onclick = async () => {
+          const confirmed = await confirmDialog("Delete this case study? Its discussion thread will be deleted too, and this can't be undone.");
+          if (!confirmed) return;
+
+          try {
+            const delResponse = await fetch(`${API_BASE_URL}/case-studies/${caseStudy._id}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            const delData = await safeJson(delResponse);
+            if (!delResponse.ok) throw new Error(delData.message || "Could not delete this case study.");
+
+            showToast("Case study deleted.", "success");
+            window.location.href = "index.html#library";
+          } catch (err) {
+            console.error("Delete case study failed:", err);
+            showToast(err.message || "Something went wrong.", "error");
+          }
+        };
       }
 
       if (replyInput) {
@@ -1376,6 +1506,33 @@ document.addEventListener("DOMContentLoaded", () => {
           joinBtn.classList.toggle("joined", isMember);
         }
 
+        const deleteCommunityBtn = document.getElementById("deleteCommunityBtn");
+        if (deleteCommunityBtn) {
+          const isCreator = currentUserId && community.createdBy?._id === currentUserId;
+          deleteCommunityBtn.classList.toggle("hidden", !isCreator);
+          deleteCommunityBtn.onclick = async () => {
+            const confirmed = await confirmDialog(
+              `Delete "${community.name}"? This can't be undone. Posts made in this community will remain but will no longer be reachable through it.`
+            );
+            if (!confirmed) return;
+
+            try {
+              const response = await fetch(`${API_BASE_URL}/communities/${community._id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${getToken()}` },
+              });
+              const data = await safeJson(response);
+              if (!response.ok) throw new Error(data.message || "Could not delete this community.");
+
+              showToast("Community deleted.", "success");
+              window.location.href = "index.html#communities";
+            } catch (err) {
+              console.error("Delete community failed:", err);
+              showToast(err.message || "Something went wrong.", "error");
+            }
+          };
+        }
+
         // Real moderators list (community.moderators comes populated
         // with name/institution from the backend's .populate() call)
         const moderatorsList = document.getElementById("moderatorsList");
@@ -1589,6 +1746,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderResearchRow(item) {
     const row = document.createElement("div");
     row.className = "research-row";
+    const currentUser = getStoredUser();
+    const isOwnItem = currentUser && item.author?._id === currentUser.id;
+
     row.innerHTML = `
       <div class="research-type"></div>
       <div class="research-main">
@@ -1601,6 +1761,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
       <div class="research-stats">
         <div class="meta-text"></div>
+        ${isOwnItem ? `<button type="button" class="delete-btn" title="Delete">${trashIcon()}</button>` : ""}
         <div class="link-text">Open →</div>
       </div>
     `;
@@ -1611,6 +1772,28 @@ document.addEventListener("DOMContentLoaded", () => {
     row.querySelector(".research-author").textContent =
       [item.author?.name, item.author?.institution].filter(Boolean).join(", ") || "Unknown";
     row.querySelector(".research-stats .meta-text").textContent = `${item.downloads} pull${item.downloads === 1 ? "" : "s"}`;
+
+    if (isOwnItem) {
+      row.querySelector(".delete-btn").addEventListener("click", async () => {
+        const confirmed = await confirmDialog("Delete this research item? This can't be undone.");
+        if (!confirmed) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/research/${item._id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          const data = await safeJson(response);
+          if (!response.ok) throw new Error(data.message || "Could not delete this item.");
+
+          row.remove();
+          showToast("Research item deleted.", "success");
+        } catch (err) {
+          console.error("Delete research item failed:", err);
+          showToast(err.message || "Something went wrong.", "error");
+        }
+      });
+    }
 
     // "Open" increments the download counter and opens the file link if one exists
     row.querySelector(".link-text").addEventListener("click", async () => {
@@ -1798,6 +1981,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderLedgerEntry(caseStudy) {
     const entry = document.createElement("div");
     entry.className = "ledger-entry";
+    const currentUser = getStoredUser();
+    const isOwnEntry = currentUser && caseStudy.addedBy?._id === currentUser.id;
+
     entry.innerHTML = `
       <div class="ledger-id"></div>
       <div class="ledger-main">
@@ -1812,6 +1998,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="meta-text discussion-count"></span>
         </div>
       </div>
+      ${isOwnEntry ? `<button type="button" class="delete-btn" title="Delete">${trashIcon()}</button>` : ""}
       <a class="link-text ledger-open" href="case-study.html?id=${caseStudy._id}">Open entry →</a>
     `;
 
@@ -1828,9 +2015,30 @@ document.addEventListener("DOMContentLoaded", () => {
     entry.querySelector(".discussion-count").textContent =
       `${caseStudy.discussionCount} discussion${caseStudy.discussionCount === 1 ? "" : "s"}`;
 
+    if (isOwnEntry) {
+      entry.querySelector(".delete-btn").addEventListener("click", async () => {
+        const confirmed = await confirmDialog("Delete this case study? Its discussion thread will be deleted too, and this can't be undone.");
+        if (!confirmed) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/case-studies/${caseStudy._id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          const data = await safeJson(response);
+          if (!response.ok) throw new Error(data.message || "Could not delete this case study.");
+
+          entry.remove();
+          showToast("Case study deleted.", "success");
+        } catch (err) {
+          console.error("Delete case study failed:", err);
+          showToast(err.message || "Something went wrong.", "error");
+        }
+      });
+    }
+
     return entry;
   }
-
 
   let libraryPage = 1;
   let libraryHasMore = false;
@@ -2895,6 +3103,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderEventCard(event, isPast) {
     const currentUser = getStoredUser();
     const isAttending = currentUser && event.attendees.includes(currentUser.id);
+    const isOrganiser = currentUser && event.organiser?._id === currentUser.id;
 
     const card = document.createElement("div");
     card.className = "event-card";
@@ -2921,6 +3130,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="event-organiser"></span>
         <div style="display:flex;align-items:center;gap:10px;">
           ${event.link ? '<a class="event-link" target="_blank" rel="noopener">Info →</a>' : ""}
+          ${isOrganiser ? `<button type="button" class="delete-btn" title="Delete event">${trashIcon()}</button>` : ""}
           <button class="event-attend-btn ${isPast ? "ended" : isAttending ? "attending" : ""}">
             ${isPast ? "Ended" : isAttending ? "✓ Attending" : "Attend"}
           </button>
@@ -2938,6 +3148,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (event.link) {
       card.querySelector(".event-link").href = event.link;
+    }
+
+    if (isOrganiser) {
+      card.querySelector(".delete-btn").addEventListener("click", async () => {
+        const confirmed = await confirmDialog("Delete this event? This can't be undone.");
+        if (!confirmed) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/events/${event._id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          const data = await safeJson(response);
+          if (!response.ok) throw new Error(data.message || "Could not delete this event.");
+
+          card.remove();
+          showToast("Event deleted.", "success");
+        } catch (err) {
+          console.error("Delete event failed:", err);
+          showToast(err.message || "Something went wrong.", "error");
+        }
+      });
     }
 
     const attendBtn = card.querySelector(".event-attend-btn");
