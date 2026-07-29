@@ -144,6 +144,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (role) el.title = role;
   }
 
+  // ===================== COMMENT ICON =====================
+  function commentIcon() {
+    return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`;
+  }
+
   // ===================== TRASH ICON =====================
   function trashIcon() {
     return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>`;
@@ -304,6 +309,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Live message polling should only run while Messages is the active tab
     if (resolvedPage !== "messages") {
       stopThreadPolling();
+      const messagesLayoutEl = document.querySelector(".messages-layout");
+      if (messagesLayoutEl) messagesLayoutEl.classList.remove("mobile-thread-open");
     }
   }
 
@@ -524,11 +531,11 @@ document.addEventListener("DOMContentLoaded", () => {
       <p class="post-body"></p>
       <div class="post-footer">
         <button class="like-btn feed-like-btn" data-liked="${liked}" data-count="${likeCount}">${likeButtonHTML(liked, likeCount)}</button>
+        <a href="post.html?id=${post._id}" class="comment-count-link">${commentIcon()}<span>${post.commentCount || 0}</span></a>
         <button type="button" class="share-btn" title="Share">${shareIcon()}</button>
         <button type="button" class="bookmark-btn" data-saved="${post.savedByMe === true}" title="Save">${bookmarkIcon(post.savedByMe === true)}</button>
         ${isOwnPost ? `<button type="button" class="delete-btn" title="Delete post">${trashIcon()}</button>` : ""}
         <span class="tag tag-outline"></span>
-        <span class="meta-text"></span>
         <a href="post.html?id=${post._id}" class="link-text">Open file →</a>
       </div>
     `;
@@ -544,7 +551,6 @@ document.addEventListener("DOMContentLoaded", () => {
     article.querySelector(".post-title").textContent = post.title;
     article.querySelector(".post-body").textContent = post.body;
     article.querySelector(".post-footer .tag").textContent = post.tag;
-    article.querySelector(".meta-text").textContent = "View comments";
 
     return article;
   }
@@ -1048,7 +1054,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const threadReplyCount = document.getElementById("threadReplyCount");
     if (threadReplyCount) {
-      threadReplyCount.textContent = `💬 ${comments.length} replies`;
+      threadReplyCount.innerHTML = `${commentIcon()}<span>${comments.length} repl${comments.length === 1 ? "y" : "ies"}</span>`;
     }
   }
 
@@ -2858,6 +2864,9 @@ document.addEventListener("DOMContentLoaded", () => {
       conversationList?.querySelectorAll(".conversation-item").forEach((i) => i.classList.remove("active"));
       item.classList.add("active");
       loadMessageThread(convo.userId, convo.name, corrRef);
+
+      const messagesLayoutEl = document.querySelector(".messages-layout");
+      if (messagesLayoutEl) messagesLayoutEl.classList.add("mobile-thread-open");
     });
 
     return item;
@@ -3011,6 +3020,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!alreadyLoaded) {
         loadConversations();
       }
+    });
+  }
+
+  // Mobile: tapping back returns to the conversation list, hiding the
+  // full-screen thread view (see .mobile-thread-open in styles.css)
+  const threadBackBtn = document.getElementById("threadBackBtn");
+  if (threadBackBtn) {
+    threadBackBtn.addEventListener("click", () => {
+      const messagesLayoutEl = document.querySelector(".messages-layout");
+      if (messagesLayoutEl) messagesLayoutEl.classList.remove("mobile-thread-open");
+      stopThreadPolling();
     });
   }
 

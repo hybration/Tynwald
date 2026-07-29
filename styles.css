@@ -274,15 +274,18 @@ body {
   transform: rotate(180deg);
 }
 
-/* ===================== COLLAPSED SIDEBAR ===================== */
-.nav-abbr {
-  display: none;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.03em;
+/* ===================== NAV ICONS ===================== */
+.nav-icon {
+  flex-shrink: 0;
   color: var(--slate-soft);
 }
 
+.nav-item.active .nav-icon,
+.nav-item:hover .nav-icon {
+  color: currentColor;
+}
+
+/* ===================== COLLAPSED SIDEBAR ===================== */
 .sidebar.collapsed {
   width: 64px;
 }
@@ -309,12 +312,8 @@ body {
   gap: 0;
 }
 
-.sidebar.collapsed .nav-item > span:not(.nav-abbr) {
+.sidebar.collapsed .nav-item > span:not(.nav-icon) {
   display: none;
-}
-
-.sidebar.collapsed .nav-abbr {
-  display: inline-block;
 }
 
 .sidebar.collapsed .theme-toggle {
@@ -374,7 +373,7 @@ body {
   text-decoration: none;
 }
 
-.nav-item > span:first-child {
+.nav-item .nav-icon + span {
   flex: 1;
 }
 
@@ -439,6 +438,29 @@ body {
   padding-top: 16px;
 }
 
+.user-card > div:not(.avatar) {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--slate-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .back-btn-icon {
   display: inline-flex;
   align-items: center;
@@ -497,18 +519,6 @@ body {
   flex-shrink: 0;
   clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
   box-shadow: 0 0 0 1px var(--gold-dim);
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.user-role {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--slate-soft);
 }
 
 /* ===================== PAGE HEADER ===================== */
@@ -723,6 +733,20 @@ body {
   display: flex;
   gap: 14px;
   align-items: center;
+}
+
+.comment-count-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--slate-soft);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  transition: color 0.15s ease;
+}
+
+.comment-count-link:hover {
+  color: var(--slate);
 }
 
 .share-btn {
@@ -1339,6 +1363,26 @@ body {
   background: var(--paper);
 }
 
+.thread-back-btn {
+  display: none; /* shown only on mobile — see the 760px media query */
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 15px;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+
+.thread-back-btn:hover {
+  color: var(--ink);
+  border-color: var(--gold-dim);
+}
+
 .message-thread-header-meta {
   flex: 1;
 }
@@ -1601,18 +1645,41 @@ body {
 @media (max-width: 760px) {
   .messages-layout {
     flex-direction: column;
-    height: auto;
+    height: calc(100vh - 220px); /* fills remaining screen instead of a cramped fixed height */
+    max-height: 640px;
   }
 
+  /* Default: show only the conversation list, full width/height.
+     The thread panel is entirely hidden until a conversation is opened —
+     no more both-visible-at-once cramped stacking. */
   .conversation-list {
     width: 100%;
-    max-height: 220px;
+    max-height: none;
+    flex: 1;
     border-right: none;
-    border-bottom: 1px solid var(--line);
+    border-bottom: none;
   }
 
   .message-thread {
-    height: 480px;
+    display: none;
+    height: auto;
+    flex: 1;
+  }
+
+  .thread-back-btn {
+    display: inline-flex;
+  }
+
+  /* Once a conversation is tapped, JS adds this class: swap to
+     showing ONLY the thread, full width/height, like a real mobile
+     messaging app (WhatsApp/X pattern) instead of both panes at once. */
+  .messages-layout.mobile-thread-open .conversation-list {
+    display: none;
+  }
+
+  .messages-layout.mobile-thread-open .message-thread {
+    display: flex;
+    flex-direction: column;
   }
 }
 
