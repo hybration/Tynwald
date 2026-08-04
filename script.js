@@ -319,6 +319,13 @@ document.addEventListener("DOMContentLoaded", () => {
       page.classList.toggle("hidden", page.id !== `page-${resolvedPage}`);
     });
 
+    // The reply composer + comment thread are a single shared widget (used
+    // by both post threads and case studies, see the HTML), so they live
+    // outside the .page sections above and need to be hidden explicitly —
+    // otherwise leaving a post thread for Feed would leave them floating.
+    document.getElementById("replyComposer")?.classList.add("hidden");
+    document.getElementById("commentThreadWrap")?.classList.add("hidden");
+
     // Live message polling should only run while Messages is the active tab
     if (resolvedPage !== "messages") {
       stopThreadPolling();
@@ -337,6 +344,13 @@ document.addEventListener("DOMContentLoaded", () => {
       page.classList.toggle("hidden", page.id !== pageId);
     });
     stopThreadPolling();
+
+    // Same reasoning as in showPage() — hide the shared widget unless
+    // we're navigating INTO one of the two pages that actually use it.
+    if (pageId !== "page-post-thread" && pageId !== "page-case-study-detail") {
+      document.getElementById("replyComposer")?.classList.add("hidden");
+      document.getElementById("commentThreadWrap")?.classList.add("hidden");
+    }
   }
 
   // Opens a post's full thread WITHOUT a page reload — this is the core of
@@ -392,11 +406,21 @@ document.addEventListener("DOMContentLoaded", () => {
       navigateToPage("page-community-detail");
       if (loadCommunityDetailRef) loadCommunityDetailRef(event.state.id);
     } else {
-      // Left the detail view — return to whatever page was open before,
-      // and restore a clean URL (no leftover ?thread=/?community= from pushState).
-      const target = (event.state && event.state.previousPage) || "feed";
-      showPage(target);
-      history.replaceState(null, "", `${window.location.pathname}#${target}`);
+      // Only step in if we're currently showing one of our pushState-
+      // tracked detail views — this popstate means we're leaving it, so
+      // return to whatever page was open before. If we're NOT in one of
+      // those views, this popstate is unrelated to our pushState calls
+      // (a plain hash change can trigger popstate on some mobile
+      // browsers too) — do nothing and let normal hash-based nav handle
+      // itself, instead of forcing everyone back to Feed.
+      const inDetailView = document.querySelector(
+        "#page-post-thread:not(.hidden), #page-community-detail:not(.hidden), #page-case-study-detail:not(.hidden)"
+      );
+      if (inDetailView) {
+        const target = (event.state && event.state.previousPage) || "feed";
+        showPage(target);
+        history.replaceState(null, "", `${window.location.pathname}#${target}`);
+      }
     }
   });
 
@@ -1247,10 +1271,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (commentCountLabel) {
       commentCountLabel.textContent = `${comments.length} repl${comments.length === 1 ? "y" : "ies"}`;
     }
+    const replyCountText = `${commentIcon()}<span>${comments.length} repl${comments.length === 1 ? "y" : "ies"}</span>`;
     const threadReplyCount = document.getElementById("threadReplyCount");
-    if (threadReplyCount) {
-      threadReplyCount.innerHTML = `${commentIcon()}<span>${comments.length} repl${comments.length === 1 ? "y" : "ies"}</span>`;
-    }
+    if (threadReplyCount) threadReplyCount.innerHTML = replyCountText;
+    const csReplyCount = document.getElementById("csReplyCount");
+    if (csReplyCount) csReplyCount.innerHTML = replyCountText;
   }
 
   async function loadComments(contextType, contextId) {
