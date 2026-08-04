@@ -15,6 +15,19 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // ===================== SHOW/HIDE PASSWORD TOGGLES =====================
+  document.querySelectorAll(".password-toggle[data-target]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetInput = document.getElementById(button.getAttribute("data-target"));
+      if (!targetInput) return;
+      const isHidden = targetInput.type === "password";
+
+      targetInput.type = isHidden ? "text" : "password";
+      button.textContent = isHidden ? "Hide" : "Show";
+      button.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+    });
+  });
+
   // ===================== NIGHT OPS (DARK MODE) =====================
   const themeToggle = document.getElementById("themeToggle");
   const savedTheme = localStorage.getItem("tynwald_theme");
@@ -326,6 +339,83 @@ document.addEventListener("DOMContentLoaded", () => {
     stopThreadPolling();
   }
 
+  // Opens a post's full thread WITHOUT a page reload — this is the core of
+  // making the app feel instant instead of clicking through to a separate
+  // post.html file. Uses history.pushState (not the hash) so it doesn't
+  // collide with the existing #feed/#communities/etc. sidebar routing;
+  // see the popstate listener below for how the back button unwinds this.
+  function openPostThread(postId) {
+    const previousPage = currentAppPage();
+    navigateToPage("page-post-thread");
+    loadThread(postId);
+    history.pushState(
+      { view: "post-thread", id: postId, previousPage },
+      "",
+      `${window.location.pathname}?thread=${postId}`
+    );
+  }
+
+  // Same idea as openPostThread, for opening a community. loadCommunityDetail
+  // itself is declared further down inside an `if (folderHeader)` block —
+  // function declarations inside a block are block-scoped in modern JS, so
+  // it isn't directly callable from here. loadCommunityDetailRef is set
+  // once that block runs (which it always does now that the community
+  // detail page lives in this same file) and bridges the two.
+  let loadCommunityDetailRef = null;
+
+  function openCommunity(communityId) {
+    const previousPage = currentAppPage();
+    navigateToPage("page-community-detail");
+    if (loadCommunityDetailRef) loadCommunityDetailRef(communityId);
+    history.pushState(
+      { view: "community-detail", id: communityId, previousPage },
+      "",
+      `${window.location.pathname}?community=${communityId}`
+    );
+  }
+
+  // What page (by sidebar nav data-page, or current hash) we're leaving,
+  // so the back button can return there instead of always landing on Feed.
+  function currentAppPage() {
+    return (
+      document.querySelector(".nav-item.active")?.getAttribute("data-page") ||
+      window.location.hash.replace("#", "") ||
+      "feed"
+    );
+  }
+
+  window.addEventListener("popstate", (event) => {
+    if (event.state && event.state.view === "post-thread") {
+      navigateToPage("page-post-thread");
+      loadThread(event.state.id);
+    } else if (event.state && event.state.view === "community-detail") {
+      navigateToPage("page-community-detail");
+      if (loadCommunityDetailRef) loadCommunityDetailRef(event.state.id);
+    } else {
+      // Left the detail view — return to whatever page was open before,
+      // and restore a clean URL (no leftover ?thread=/?community= from pushState).
+      const target = (event.state && event.state.previousPage) || "feed";
+      showPage(target);
+      history.replaceState(null, "", `${window.location.pathname}#${target}`);
+    }
+  });
+
+  const postThreadBack = document.getElementById("postThreadBack");
+  if (postThreadBack) {
+    postThreadBack.addEventListener("click", (event) => {
+      event.preventDefault();
+      history.back();
+    });
+  }
+
+  const communityDetailBack = document.getElementById("communityDetailBack");
+  if (communityDetailBack) {
+    communityDetailBack.addEventListener("click", (event) => {
+      event.preventDefault();
+      history.back();
+    });
+  }
+
   navButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const targetPage = btn.getAttribute("data-page");
@@ -430,6 +520,99 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ===================== SETTINGS =====================
+  const openSettingsBtn = document.getElementById("openSettingsBtn");
+  if (openSettingsBtn) {
+    openSettingsBtn.addEventListener("click", () => {
+      navigateToPage("page-settings");
+    });
+  }
+
+  const settingsBack = document.getElementById("settingsBack");
+  if (settingsBack) {
+    settingsBack.addEventListener("click", (event) => {
+      event.preventDefault();
+      showPage("profile");
+      window.location.hash = "profile";
+    });
+  }
+
+  const changePasswordForm = document.getElementById("changePasswordForm");
+  if (changePasswordForm) {
+    changePasswordForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const currentPassword = document.getElementById("currentPassword").value;
+      const newPassword = document.getElementById("newPassword").value;
+      const submitBtn = document.getElementById("changePasswordSubmit");
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Updating...";
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/me/password`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        const data = await safeJson(response);
+        if (!response.ok) throw new Error(data.message || "Could not update your password.");
+
+        showToast("Password updated.", "success");
+        changePasswordForm.reset();
+      } catch (err) {
+        console.error("Change password failed:", err);
+        showToast(err.message || "Something went wrong.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Update password";
+      }
+    });
+  }
+
+  const deleteAccountForm = document.getElementById("deleteAccountForm");
+  if (deleteAccountForm) {
+    deleteAccountForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const password = document.getElementById("deleteAccountPassword").value;
+
+      const confirmed = await confirmDialog(
+        "This permanently deletes your account and everything listed above. This cannot be undone. Continue?"
+      );
+      if (!confirmed) return;
+
+      const submitBtn = document.getElementById("deleteAccountSubmit");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Deleting...";
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({ password }),
+        });
+        const data = await safeJson(response);
+        if (!response.ok) throw new Error(data.message || "Could not delete your account.");
+
+        localStorage.removeItem("tynwald_token");
+        localStorage.removeItem("tynwald_user");
+        window.location.href = "auth.html";
+      } catch (err) {
+        console.error("Delete account failed:", err);
+        showToast(err.message || "Something went wrong.", "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Delete my account";
+      }
+    });
+  }
+
   // If we arrived here via a "?viewUser=<id>" link (from post.html or
   // community-detail.html, which don't have this page built in),
   // jump straight to that profile once everything above is wired up.
@@ -531,12 +714,12 @@ document.addEventListener("DOMContentLoaded", () => {
       <p class="post-body"></p>
       <div class="post-footer">
         <button class="like-btn feed-like-btn" data-liked="${liked}" data-count="${likeCount}">${likeButtonHTML(liked, likeCount)}</button>
-        <a href="post.html?id=${post._id}" class="comment-count-link">${commentIcon()}<span>${post.commentCount || 0}</span></a>
+        <a href="post.html?id=${post._id}" class="comment-count-link open-thread-link" data-post-id="${post._id}">${commentIcon()}<span>${post.commentCount || 0}</span></a>
         <button type="button" class="share-btn" title="Share">${shareIcon()}</button>
         <button type="button" class="bookmark-btn" data-saved="${post.savedByMe === true}" title="Save">${bookmarkIcon(post.savedByMe === true)}</button>
         ${isOwnPost ? `<button type="button" class="delete-btn" title="Delete post">${trashIcon()}</button>` : ""}
         <span class="tag tag-outline"></span>
-        <a href="post.html?id=${post._id}" class="link-text">Open file →</a>
+        <a href="post.html?id=${post._id}" class="link-text open-thread-link" data-post-id="${post._id}">Open file →</a>
       </div>
     `;
 
@@ -816,6 +999,18 @@ document.addEventListener("DOMContentLoaded", () => {
     openUserProfile(authorLink.dataset.userId);
   });
 
+  // ===================== OPEN POST THREAD (in-app, no page reload) =====================
+  document.body.addEventListener("click", (event) => {
+    const link = event.target.closest(".open-thread-link");
+    if (!link) return;
+    // Allow middle-click / ctrl-click / cmd-click to still open in a new tab
+    // via the normal href, instead of hijacking every click unconditionally.
+    if (event.metaKey || event.ctrlKey || event.button === 1) return;
+
+    event.preventDefault();
+    openPostThread(link.dataset.postId);
+  });
+
   // ===================== DELETE POST (feed card) =====================
   document.body.addEventListener("click", async (event) => {
     const deleteBtn = event.target.closest(".post-card .delete-btn");
@@ -1073,11 +1268,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCommentTree(comments);
   }
 
-  async function loadThread() {
+  async function loadThread(explicitPostId) {
     if (!threadPost) return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const postId = urlParams.get("id");
+    const postId = explicitPostId || new URLSearchParams(window.location.search).get("id");
 
     if (!postId) {
       if (threadLoading) threadLoading.textContent = "No post specified.";
@@ -1188,7 +1382,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  if (threadPost) {
+  if (threadPost && new URLSearchParams(window.location.search).get("id")) {
     loadThread();
   }
 
@@ -1387,7 +1581,13 @@ document.addEventListener("DOMContentLoaded", () => {
     card.querySelector("h3").textContent = community.name;
     card.querySelector("p").textContent = community.description || "No description provided yet.";
     card.querySelector(".meta-text").textContent = `${community.members.length} member${community.members.length === 1 ? "" : "s"}`;
-    card.querySelector(".link-text").href = `community-detail.html?id=${community._id}`;
+    const link = card.querySelector(".link-text");
+    link.href = `community-detail.html?id=${community._id}`;
+    link.addEventListener("click", (event) => {
+      if (event.metaKey || event.ctrlKey || event.button === 1) return;
+      event.preventDefault();
+      openCommunity(community._id);
+    });
     return card;
   }
 
@@ -1480,16 +1680,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
     const communityId = urlParams.get("id");
 
-    async function loadCommunityDetail() {
-      if (!communityId) {
+    async function loadCommunityDetail(explicitCommunityId) {
+      const idToUse = explicitCommunityId || communityId;
+
+      if (!idToUse) {
         if (communityLoading) {
           communityLoading.textContent = "No community specified.";
         }
         return;
       }
 
+      // Reset to a clean loading state — matters when navigating in-app
+      // from one community straight to another, not just on first load.
+      if (communityLoading) {
+        communityLoading.textContent = "Loading community...";
+        communityLoading.classList.remove("hidden");
+      }
+      if (folderHeader) folderHeader.classList.add("hidden");
+      if (communityLayoutBody) communityLayoutBody.classList.add("hidden");
+
       try {
-        const response = await fetch(`${API_BASE_URL}/communities/${communityId}`);
+        const response = await fetch(`${API_BASE_URL}/communities/${idToUse}`);
         const community = await response.json();
 
         if (!response.ok) {
@@ -1531,7 +1742,8 @@ document.addEventListener("DOMContentLoaded", () => {
               if (!response.ok) throw new Error(data.message || "Could not delete this community.");
 
               showToast("Community deleted.", "success");
-              window.location.href = "index.html#communities";
+              showPage("communities");
+              window.location.hash = "communities";
             } catch (err) {
               console.error("Delete community failed:", err);
               showToast(err.message || "Something went wrong.", "error");
@@ -1680,7 +1892,11 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    loadCommunityDetail();
+    loadCommunityDetailRef = loadCommunityDetail;
+
+    if (communityId) {
+      loadCommunityDetail();
+    }
 
     if (joinBtn) {
       joinBtn.addEventListener("click", async () => {
@@ -2236,7 +2452,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Reply/mention/like notifications → the post they're about
       if (["reply", "mention", "like"].includes(notification.type) && notification.relatedPost?._id) {
-        window.location.href = `post.html?id=${notification.relatedPost._id}`;
+        openPostThread(notification.relatedPost._id);
         return;
       }
 

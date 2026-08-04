@@ -13,8 +13,8 @@
 <link rel="icon" type="image/png" sizes="512x512" href="Images/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2" />
-<link rel="stylesheet" href="auth.css?v=2" />
+<link rel="stylesheet" href="styles.css?v=6" />
+<link rel="stylesheet" href="auth.css?v=6" />
 </head>
 <body class="auth-body">
 
@@ -146,6 +146,63 @@
           </div>
 
           <button type="submit" class="btn-primary auth-submit" id="loginSubmit">Retrieve my file</button>
+
+          <div style="text-align:right; margin-top:12px;">
+            <button type="button" id="showForgotPassword" class="verify-link-btn">Forgot password?</button>
+          </div>
+        </form>
+
+        <!-- FORGOT PASSWORD: STEP 1 - REQUEST CODE -->
+        <form id="forgotRequestForm" class="auth-form hidden">
+          <div class="intake-stamp-row" style="margin-top: 0; margin-bottom: 18px;">
+            <span class="intake-stamp">PASSWORD RESET</span>
+          </div>
+
+          <p class="meta-text" style="display:block; margin-bottom: 18px; line-height: 1.5;">
+            Enter the email on your file. If it matches an account, we'll send a 6-digit reset code.
+          </p>
+
+          <div class="auth-field">
+            <label class="auth-label" for="forgotEmail">Email</label>
+            <input type="email" id="forgotEmail" class="auth-input" required />
+          </div>
+
+          <button type="submit" class="btn-primary auth-submit" id="forgotRequestSubmit">Send reset code</button>
+
+          <div style="margin-top:14px;">
+            <button type="button" id="forgotRequestBack" class="verify-link-btn">← Back to log in</button>
+          </div>
+        </form>
+
+        <!-- FORGOT PASSWORD: STEP 2 - CODE + NEW PASSWORD -->
+        <form id="forgotResetForm" class="auth-form hidden">
+          <div class="intake-stamp-row" style="margin-top: 0; margin-bottom: 18px;">
+            <span class="intake-stamp">PASSWORD RESET</span>
+          </div>
+
+          <p class="meta-text" style="display:block; margin-bottom: 18px; line-height: 1.5;">
+            If <strong id="forgotEmailDisplay"></strong> has an account, a code was sent. Enter it below along with your new password.
+          </p>
+
+          <div class="auth-field">
+            <label class="auth-label" for="forgotCode">Reset code</label>
+            <input type="text" id="forgotCode" class="auth-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required />
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label" for="forgotNewPassword">New password</label>
+            <div class="password-field">
+              <input type="password" id="forgotNewPassword" class="auth-input" minlength="8" required />
+              <button type="button" class="password-toggle" data-target="forgotNewPassword" aria-label="Show password">Show</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary auth-submit" id="forgotResetSubmit">Reset password &amp; log in</button>
+
+          <div style="display:flex; justify-content:space-between; margin-top:14px;">
+            <button type="button" id="forgotResetBack" class="verify-link-btn">← Back</button>
+            <button type="button" id="forgotResendCode" class="verify-link-btn">Resend code</button>
+          </div>
         </form>
 
       </div>
@@ -153,7 +210,7 @@
 
   </div>
 
-  <script src="config.js?v=2"></script>
-  <script src="auth.js?v=2"></script>
+  <script src="config.js?v=6"></script>
+  <script src="auth.js?v=6"></script>
 </body>
 </html>

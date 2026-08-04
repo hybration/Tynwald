@@ -13,7 +13,9 @@
 <link rel="icon" type="image/png" sizes="512x512" href="Images/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=4" />
+<link rel="stylesheet" href="styles.css?v=8" />
+<link rel="stylesheet" href="post.css?v=8" />
+<link rel="stylesheet" href="community-detail.css?v=8" />
 </head>
 <body>
 
@@ -75,7 +77,7 @@
             <div class="user-name" id="sidebarUserName">Amara Okafor</div>
             <div class="user-role" id="sidebarUserRole">Student Scholar</div>
           </div>
-          <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out">⏻</button>
+          <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg></button>
         </div>
       </div>
     </aside>
@@ -513,7 +515,10 @@
                 </div>
                 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
                   <span class="case-stamp" id="profileUserId"></span>
-                  <button id="editProfileBtn" class="btn-ghost-inline" style="font-size:11px;padding:5px 10px;">Edit profile</button>
+                  <div style="display:flex;gap:8px;">
+                    <button id="editProfileBtn" class="btn-ghost-inline" style="font-size:11px;padding:5px 10px;">Edit profile</button>
+                    <button id="openSettingsBtn" class="btn-ghost-inline" style="font-size:11px;padding:5px 10px;">Settings</button>
+                  </div>
                 </div>
               </div>
               <p class="profile-bio" id="profileBio"></p>
@@ -662,6 +667,220 @@
         </div>
       </section>
 
+      <!-- ===================== SETTINGS ===================== -->
+      <section class="page hidden" id="page-settings">
+        <a href="#" id="settingsBack" class="back-btn-icon" aria-label="Back" title="Back">←</a>
+
+        <header class="page-header">
+          <div class="eyebrow">ACCOUNT</div>
+          <h1>Settings</h1>
+        </header>
+
+        <div class="settings-block">
+          <h2 class="settings-block-title">Change password</h2>
+          <form id="changePasswordForm" class="settings-form">
+            <div class="auth-field">
+              <label class="auth-label" for="currentPassword">Current password</label>
+              <div class="password-field">
+                <input type="password" id="currentPassword" class="auth-input" required />
+                <button type="button" class="password-toggle" data-target="currentPassword" aria-label="Show password">Show</button>
+              </div>
+            </div>
+            <div class="auth-field">
+              <label class="auth-label" for="newPassword">New password</label>
+              <div class="password-field">
+                <input type="password" id="newPassword" class="auth-input" minlength="8" required />
+                <button type="button" class="password-toggle" data-target="newPassword" aria-label="Show password">Show</button>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" id="changePasswordSubmit" style="margin-bottom:0;">Update password</button>
+          </form>
+        </div>
+
+        <div class="settings-block settings-block-danger">
+          <h2 class="settings-block-title">Delete account</h2>
+          <p class="meta-text" style="display:block; line-height:1.6; margin-bottom:16px;">
+            This permanently deletes your account, posts, research items, and case studies you added.
+            Comments you left elsewhere are replaced with "[deleted]" so reply threads stay intact.
+            Messages you've sent stay in the other person's conversation history. This can't be undone.
+          </p>
+          <form id="deleteAccountForm" class="settings-form">
+            <div class="auth-field">
+              <label class="auth-label" for="deleteAccountPassword">Confirm your password to continue</label>
+              <div class="password-field">
+                <input type="password" id="deleteAccountPassword" class="auth-input" required />
+                <button type="button" class="password-toggle" data-target="deleteAccountPassword" aria-label="Show password">Show</button>
+              </div>
+            </div>
+            <button type="submit" class="btn-danger" id="deleteAccountSubmit">Delete my account</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===================== POST THREAD (folded in from post.html for SPA-style navigation — no full page reload when opening a post) ===================== -->
+      <section class="page hidden" id="page-post-thread">
+        <a href="#" id="postThreadBack" class="back-btn-icon" aria-label="Back" title="Back">←</a>
+
+        <p id="threadLoading" class="empty-state">Loading thread...</p>
+
+        <!-- Original post, full version -->
+        <article class="thread-post hidden" id="threadPost">
+          <div class="post-top">
+            <span class="case-stamp" id="threadCaseId"></span>
+            <span class="tag tag-outline" id="threadStatus"></span>
+          </div>
+          <div class="post-meta">
+            <div class="thread-avatar" id="threadAvatar"></div>
+            <div>
+              <a href="#" class="post-author" id="threadAuthor"></a>
+              <div class="post-inst" id="threadAuthorInst"></div>
+            </div>
+            <span class="post-time thread-time" id="threadTime"></span>
+          </div>
+
+          <h1 class="thread-title" id="threadTitle"></h1>
+
+          <div class="thread-body" id="threadBody"></div>
+
+          <div class="thread-actions">
+            <button class="thread-action-btn like-btn" id="threadLikeBtn" data-liked="false" data-count="0"><svg class="like-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.7-10.2-9.1C.2 9.1 1 5.4 4.4 4c2.5-1 5.1 0 6.7 2.1L12 7.2l.9-1.1C14.5 4 17.1 3 19.6 4c3.4 1.4 4.2 5.1 2.6 7.9C19.5 16.3 12 21 12 21z"/></svg><span class="like-count">0</span></button>
+            <span class="thread-action-btn" id="threadReplyCount">0 replies</span>
+            <button type="button" class="thread-action-btn share-btn" id="threadShareBtn" title="Share"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"></line><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"></line></svg> Share</button>
+            <button type="button" class="thread-action-btn bookmark-btn" id="threadBookmarkBtn" data-saved="false" title="Save"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg> Save</button>
+            <button type="button" class="thread-action-btn delete-btn hidden" id="threadDeleteBtn" title="Delete post"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg> Delete</button>
+            <span class="tag tag-outline" id="threadTag" style="margin-left: auto;"></span>
+          </div>
+        </article>
+
+        <!-- Reply composer -->
+        <div class="reply-composer hidden" id="replyComposer">
+          <div class="thread-avatar small" id="replyComposerAvatar">AO</div>
+          <textarea id="replyInput" class="reply-input" placeholder="Add to the discussion..." rows="2"></textarea>
+          <button id="replySubmit" class="btn-primary">Post reply</button>
+        </div>
+
+        <!-- Comment thread -->
+        <div class="comment-thread hidden" id="commentThreadWrap">
+
+          <div class="comment-section-label" id="commentCountLabel">0 replies</div>
+
+          <div id="commentList"></div>
+
+        </div>
+      </section>
+
+      <!-- ===================== COMMUNITY DETAIL (folded in from community-detail.html for SPA-style navigation) ===================== -->
+      <section class="page hidden" id="page-community-detail">
+        <a href="#" id="communityDetailBack" class="back-btn-icon" aria-label="Back" title="Back">←</a>
+
+        <p id="communityLoading" class="empty-state">Loading community...</p>
+
+        <!-- Folder-style header -->
+        <div class="folder-header hidden" id="folderHeader">
+          <div class="folder-tab" id="folderTab">COM-002</div>
+          <div class="folder-header-top">
+            <div>
+              <h1 class="folder-title" id="folderTitle">Cybercrime</h1>
+              <p class="folder-desc" id="folderDesc">Digital fraud, ransomware trends, and cyber-forensics — for researchers, practitioners, and students tracking the evolving threat landscape.</p>
+            </div>
+            <div class="folder-header-actions">
+              <button class="btn-primary join-btn" id="joinBtn" data-joined="false">+ Join Community</button>
+              <button type="button" class="delete-btn hidden" id="deleteCommunityBtn" title="Delete community"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg></button>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="folder-stats">
+            <div class="folder-stat">
+              <span class="stat-value" id="folderMemberCount">0</span>
+              <span class="meta-text">members</span>
+            </div>
+            <div class="folder-stat">
+              <span class="stat-value">—</span>
+              <span class="meta-text">posts this month</span>
+            </div>
+            <div class="folder-stat">
+              <span class="stat-value" id="folderEstablished">—</span>
+              <span class="meta-text">established</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="community-layout hidden" id="communityLayoutBody">
+
+          <!-- Posts column -->
+          <div class="community-posts">
+
+            <!-- Mini composer, scoped to this community -->
+            <div class="composer" id="communityComposer" style="max-width: none;">
+              <div class="composer-tab">NEW ENTRY IN THIS FOLDER</div>
+              <div class="composer-row-top">
+                <input
+                  type="text"
+                  id="communityPostTitle"
+                  class="composer-title-input"
+                  placeholder="Title — what's the discussion or finding?"
+                />
+              </div>
+              <textarea
+                id="communityPostBody"
+                class="composer-body-input"
+                placeholder="Add detail, context, or a question for this community..."
+                rows="3"
+              ></textarea>
+              <div class="composer-row-bottom">
+                <select id="communityPostTag" class="composer-tag-select">
+                  <option value="Cybercrime">Cybercrime</option>
+                  <option value="Juvenile Justice">Juvenile Justice</option>
+                  <option value="Community Policing">Community Policing</option>
+                  <option value="Victimology">Victimology</option>
+                  <option value="Forensic Science">Forensic Science</option>
+                  <option value="Criminal Law">Criminal Law</option>
+                </select>
+                <button id="communityPostSubmit" class="btn-primary composer-submit">File post</button>
+              </div>
+            </div>
+
+            <div class="filter-row">
+              <span class="filter-chip active">Recent</span>
+              <span class="filter-chip">Most discussed</span>
+              <span class="filter-chip">Active alerts</span>
+            </div>
+
+            <p id="communityPostsLoading" class="empty-state">Loading posts...</p>
+
+            <div id="communityPostsList"></div>
+
+          </div>
+
+          <!-- Sidebar column -->
+          <div class="community-sidebar">
+
+            <div class="sidebar-box">
+              <div class="section-label">About this folder</div>
+              <p class="sidebar-box-text">
+                Created for sharing research, incident analysis, and field experience
+                related to digital crime. Posts are expected to cite sources where
+                possible. Moderated by senior contributors.
+              </p>
+            </div>
+
+            <div class="sidebar-box">
+              <div class="section-label">Moderators</div>
+              <div class="mod-list" id="moderatorsList">
+                <p class="meta-text">Loading...</p>
+              </div>
+            </div>
+
+            <div class="sidebar-box">
+              <div class="section-label">Related communities</div>
+              <p class="sidebar-box-text">Not available yet — this feature is still being built.</p>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -679,7 +898,7 @@
 
   <div class="toast-stack" id="toastStack"></div>
 
-  <script src="config.js?v=4"></script>
-  <script src="script.js?v=4"></script>
+  <script src="config.js?v=8"></script>
+  <script src="script.js?v=8"></script>
 </body>
 </html>

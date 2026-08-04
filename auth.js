@@ -12,11 +12,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const signupForm = document.getElementById('signupForm');
   const loginForm = document.getElementById('loginForm');
   const verifyForm = document.getElementById('verifyForm');
+  const forgotRequestForm = document.getElementById('forgotRequestForm');
+  const forgotResetForm = document.getElementById('forgotResetForm');
   const authError = document.getElementById('authError');
 
   // Holds the details from step 1 so step 2 (verify) and "Resend code"
   // can re-submit them without asking the user to type everything again.
   let pendingSignup = null;
+
+  // Holds the email between forgot-password step 1 (request code) and
+  // step 2 (enter code + new password), same idea as pendingSignup above.
+  let pendingResetEmail = null;
 
   // ----- Tab switching (Sign Up <-> Log In) -----
   function showSignup() {
@@ -25,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
     signupForm.classList.remove('hidden');
     loginForm.classList.add('hidden');
     verifyForm.classList.add('hidden');
+    forgotRequestForm.classList.add('hidden');
+    forgotResetForm.classList.add('hidden');
     hideError();
   }
 
@@ -34,6 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loginForm.classList.remove('hidden');
     signupForm.classList.add('hidden');
     verifyForm.classList.add('hidden');
+    forgotRequestForm.classList.add('hidden');
+    forgotResetForm.classList.add('hidden');
     hideError();
   }
 
@@ -41,9 +51,32 @@ document.addEventListener('DOMContentLoaded', () => {
     signupForm.classList.add('hidden');
     loginForm.classList.add('hidden');
     verifyForm.classList.remove('hidden');
+    forgotRequestForm.classList.add('hidden');
+    forgotResetForm.classList.add('hidden');
     document.getElementById('verifyEmailDisplay').textContent = email;
     document.getElementById('verifyCode').value = '';
     document.getElementById('verifyCode').focus();
+    hideError();
+  }
+
+  function showForgotRequest() {
+    signupForm.classList.add('hidden');
+    loginForm.classList.add('hidden');
+    verifyForm.classList.add('hidden');
+    forgotResetForm.classList.add('hidden');
+    forgotRequestForm.classList.remove('hidden');
+    hideError();
+  }
+
+  function showForgotReset(email) {
+    signupForm.classList.add('hidden');
+    loginForm.classList.add('hidden');
+    verifyForm.classList.add('hidden');
+    forgotRequestForm.classList.add('hidden');
+    forgotResetForm.classList.remove('hidden');
+    document.getElementById('forgotEmailDisplay').textContent = email;
+    document.getElementById('forgotCode').value = '';
+    document.getElementById('forgotCode').focus();
     hideError();
   }
 
@@ -232,6 +265,128 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally {
       submitButton.disabled = false;
       submitButton.textContent = 'Log in';
+    }
+  });
+
+  // ----- Show the forgot-password panel -----
+  document.getElementById('showForgotPassword').addEventListener('click', () => {
+    showForgotRequest();
+  });
+
+  document.getElementById('forgotRequestBack').addEventListener('click', () => {
+    showLogin();
+  });
+
+  document.getElementById('forgotResetBack').addEventListener('click', () => {
+    showForgotRequest();
+  });
+
+  // ----- Forgot password step 1: request a code -----
+  async function requestPasswordResetCode(email) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password/request-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showError(data.message || 'Something went wrong sending your code.');
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Request reset code failed:', err);
+      showError('Could not reach the server. Is the backend running?');
+      return false;
+    }
+  }
+
+  forgotRequestForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    hideError();
+
+    const email = document.getElementById('forgotEmail').value.trim();
+    pendingResetEmail = email;
+
+    const submitButton = document.getElementById('forgotRequestSubmit');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Sending...';
+
+    const sent = await requestPasswordResetCode(email);
+
+    submitButton.disabled = false;
+    submitButton.textContent = 'Send reset code';
+
+    if (sent) {
+      showForgotReset(email);
+    }
+  });
+
+  // ----- Resend the reset code -----
+  document.getElementById('forgotResendCode').addEventListener('click', async () => {
+    if (!pendingResetEmail) {
+      showForgotRequest();
+      return;
+    }
+
+    const resendBtn = document.getElementById('forgotResendCode');
+    resendBtn.disabled = true;
+    resendBtn.textContent = 'Sending...';
+
+    const sent = await requestPasswordResetCode(pendingResetEmail);
+
+    resendBtn.disabled = false;
+    resendBtn.textContent = 'Resend code';
+
+    if (sent) {
+      hideError();
+    }
+  });
+
+  // ----- Forgot password step 2: submit code + new password -----
+  forgotResetForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    hideError();
+
+    if (!pendingResetEmail) {
+      showError('Your reset session expired — please start again.');
+      showForgotRequest();
+      return;
+    }
+
+    const code = document.getElementById('forgotCode').value.trim();
+    const newPassword = document.getElementById('forgotNewPassword').value;
+
+    const submitButton = document.getElementById('forgotResetSubmit');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Resetting...';
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: pendingResetEmail, code, newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showError(data.message || 'Invalid or expired code.');
+        return;
+      }
+
+      pendingResetEmail = null;
+      saveSessionAndRedirect(data);
+    } catch (err) {
+      console.error('Reset password failed:', err);
+      showError('Could not reach the server. Is the backend running?');
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = 'Reset password & log in';
     }
   });
 });
