@@ -388,6 +388,21 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  // Same idea again, for case studies. Unlike loadCommunityDetail,
+  // loadCaseStudyThread is declared at the top level (not inside an
+  // `if` block further down), so — thanks to function hoisting — it can
+  // be called directly here with no bridge reference needed.
+  function openCaseStudy(caseStudyId) {
+    const previousPage = currentAppPage();
+    navigateToPage("page-case-study-detail");
+    loadCaseStudyThread(caseStudyId);
+    history.pushState(
+      { view: "case-study-detail", id: caseStudyId, previousPage },
+      "",
+      `${window.location.pathname}?case-study=${caseStudyId}`
+    );
+  }
+
   // What page (by sidebar nav data-page, or current hash) we're leaving,
   // so the back button can return there instead of always landing on Feed.
   function currentAppPage() {
@@ -405,6 +420,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (event.state && event.state.view === "community-detail") {
       navigateToPage("page-community-detail");
       if (loadCommunityDetailRef) loadCommunityDetailRef(event.state.id);
+    } else if (event.state && event.state.view === "case-study-detail") {
+      navigateToPage("page-case-study-detail");
+      loadCaseStudyThread(event.state.id);
     } else {
       // Only step in if we're currently showing one of our pushState-
       // tracked detail views — this popstate means we're leaving it, so
@@ -435,6 +453,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const communityDetailBack = document.getElementById("communityDetailBack");
   if (communityDetailBack) {
     communityDetailBack.addEventListener("click", (event) => {
+      event.preventDefault();
+      history.back();
+    });
+  }
+
+  const caseStudyDetailBack = document.getElementById("caseStudyDetailBack");
+  if (caseStudyDetailBack) {
+    caseStudyDetailBack.addEventListener("click", (event) => {
       event.preventDefault();
       history.back();
     });
@@ -1419,16 +1445,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const caseStudyDetail = document.getElementById("caseStudyDetail");
   const caseStudyDetailLoading = document.getElementById("caseStudyDetailLoading");
 
-  async function loadCaseStudyThread() {
+  async function loadCaseStudyThread(explicitCaseStudyId) {
     if (!caseStudyDetail) return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const caseStudyId = urlParams.get("id");
+    const caseStudyId = explicitCaseStudyId || new URLSearchParams(window.location.search).get("id");
 
     if (!caseStudyId) {
       if (caseStudyDetailLoading) caseStudyDetailLoading.textContent = "No case study specified.";
       return;
     }
+
+    // Reset to a clean loading state — matters when navigating in-app
+    // from one case study straight to another, not just on first load.
+    if (caseStudyDetailLoading) {
+      caseStudyDetailLoading.textContent = "Loading case study...";
+      caseStudyDetailLoading.classList.remove("hidden");
+    }
+    caseStudyDetail.classList.add("hidden");
 
     try {
       const response = await fetch(`${API_BASE_URL}/case-studies/${caseStudyId}`, {
@@ -1483,7 +1516,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!delResponse.ok) throw new Error(delData.message || "Could not delete this case study.");
 
             showToast("Case study deleted.", "success");
-            window.location.href = "index.html#library";
+            showPage("library");
+            window.location.hash = "library";
           } catch (err) {
             console.error("Delete case study failed:", err);
             showToast(err.message || "Something went wrong.", "error");
@@ -1504,7 +1538,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  if (caseStudyDetail) {
+  if (caseStudyDetail && new URLSearchParams(window.location.search).get("id")) {
     loadCaseStudyThread();
   }
 
@@ -2262,6 +2296,12 @@ document.addEventListener("DOMContentLoaded", () => {
     entry.querySelector(".discussion-count").textContent =
       `${caseStudy.discussionCount} discussion${caseStudy.discussionCount === 1 ? "" : "s"}`;
 
+    entry.querySelector(".ledger-open").addEventListener("click", (event) => {
+      if (event.metaKey || event.ctrlKey || event.button === 1) return;
+      event.preventDefault();
+      openCaseStudy(caseStudy._id);
+    });
+
     if (isOwnEntry) {
       entry.querySelector(".delete-btn").addEventListener("click", async () => {
         const confirmed = await confirmDialog("Delete this case study? Its discussion thread will be deleted too, and this can't be undone.");
@@ -2471,7 +2511,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // A comment on a case study you added → that case study's discussion
       if (notification.type === "reply" && notification.relatedCaseStudy?._id) {
-        window.location.href = `case-study.html?id=${notification.relatedCaseStudy._id}`;
+        openCaseStudy(notification.relatedCaseStudy._id);
         return;
       }
 
