@@ -353,20 +353,42 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ===================== NAVIGATION (URL is the single source of truth) =====================
+  // Every in-app navigation — sidebar clicks, opening a post/community/case
+  // study, the back button, browser back/forward — funnels through here.
+  // Instead of trusting a stored history.state object (which turned out to
+  // be fragile: it could end up stale or missing depending on exactly how
+  // a browser fires popstate), this always reads window.location fresh.
+  // That's safe because by the time popstate (or any navigation) fires,
+  // the browser has ALREADY updated window.location to the real, correct
+  // destination — so deriving the view from it directly can't go stale.
+  function resolveAndShowCurrentView() {
+    const params = new URLSearchParams(window.location.search);
+    const threadId = params.get("thread");
+    const communityId = params.get("community");
+    const caseStudyId = params.get("case-study");
+
+    if (threadId) {
+      navigateToPage("page-post-thread");
+      loadThread(threadId);
+    } else if (communityId) {
+      navigateToPage("page-community-detail");
+      if (loadCommunityDetailRef) loadCommunityDetailRef(communityId);
+    } else if (caseStudyId) {
+      navigateToPage("page-case-study-detail");
+      loadCaseStudyThread(caseStudyId);
+    } else {
+      showPage(window.location.hash.replace("#", "") || "feed");
+    }
+  }
+
   // Opens a post's full thread WITHOUT a page reload — this is the core of
   // making the app feel instant instead of clicking through to a separate
-  // post.html file. Uses history.pushState (not the hash) so it doesn't
-  // collide with the existing #feed/#communities/etc. sidebar routing;
-  // see the popstate listener below for how the back button unwinds this.
+  // post.html file.
   function openPostThread(postId) {
-    const previousPage = currentAppPage();
     navigateToPage("page-post-thread");
     loadThread(postId);
-    history.pushState(
-      { view: "post-thread", id: postId, previousPage },
-      "",
-      `${window.location.pathname}?thread=${postId}`
-    );
+    history.pushState(null, "", `${window.location.pathname}?thread=${postId}`);
   }
 
   // Same idea as openPostThread, for opening a community. loadCommunityDetail
@@ -378,14 +400,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let loadCommunityDetailRef = null;
 
   function openCommunity(communityId) {
-    const previousPage = currentAppPage();
     navigateToPage("page-community-detail");
     if (loadCommunityDetailRef) loadCommunityDetailRef(communityId);
-    history.pushState(
-      { view: "community-detail", id: communityId, previousPage },
-      "",
-      `${window.location.pathname}?community=${communityId}`
-    );
+    history.pushState(null, "", `${window.location.pathname}?community=${communityId}`);
   }
 
   // Same idea again, for case studies. Unlike loadCommunityDetail,
@@ -393,54 +410,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // `if` block further down), so — thanks to function hoisting — it can
   // be called directly here with no bridge reference needed.
   function openCaseStudy(caseStudyId) {
-    const previousPage = currentAppPage();
     navigateToPage("page-case-study-detail");
     loadCaseStudyThread(caseStudyId);
-    history.pushState(
-      { view: "case-study-detail", id: caseStudyId, previousPage },
-      "",
-      `${window.location.pathname}?case-study=${caseStudyId}`
-    );
+    history.pushState(null, "", `${window.location.pathname}?case-study=${caseStudyId}`);
   }
 
-  // What page (by sidebar nav data-page, or current hash) we're leaving,
-  // so the back button can return there instead of always landing on Feed.
-  function currentAppPage() {
-    return (
-      document.querySelector(".nav-item.active")?.getAttribute("data-page") ||
-      window.location.hash.replace("#", "") ||
-      "feed"
-    );
-  }
-
-  window.addEventListener("popstate", (event) => {
-    if (event.state && event.state.view === "post-thread") {
-      navigateToPage("page-post-thread");
-      loadThread(event.state.id);
-    } else if (event.state && event.state.view === "community-detail") {
-      navigateToPage("page-community-detail");
-      if (loadCommunityDetailRef) loadCommunityDetailRef(event.state.id);
-    } else if (event.state && event.state.view === "case-study-detail") {
-      navigateToPage("page-case-study-detail");
-      loadCaseStudyThread(event.state.id);
-    } else {
-      // Only step in if we're currently showing one of our pushState-
-      // tracked detail views — this popstate means we're leaving it, so
-      // return to whatever page was open before. If we're NOT in one of
-      // those views, this popstate is unrelated to our pushState calls
-      // (a plain hash change can trigger popstate on some mobile
-      // browsers too) — do nothing and let normal hash-based nav handle
-      // itself, instead of forcing everyone back to Feed.
-      const inDetailView = document.querySelector(
-        "#page-post-thread:not(.hidden), #page-community-detail:not(.hidden), #page-case-study-detail:not(.hidden)"
-      );
-      if (inDetailView) {
-        const target = (event.state && event.state.previousPage) || "feed";
-        showPage(target);
-        history.replaceState(null, "", `${window.location.pathname}#${target}`);
-      }
-    }
-  });
+  window.addEventListener("popstate", resolveAndShowCurrentView);
 
   const postThreadBack = document.getElementById("postThreadBack");
   if (postThreadBack) {
@@ -466,11 +441,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Every sidebar nav click pushes a plain hash URL — no custom state
+  // object needed, since resolveAndShowCurrentView() (see above) derives
+  // everything fresh from window.location whenever it's called.
+  function navigateToSidebarPage(targetPage) {
+    showPage(targetPage);
+    history.pushState(null, "", `${window.location.pathname}#${targetPage}`);
+  }
+
   navButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const targetPage = btn.getAttribute("data-page");
-      window.location.hash = targetPage;
-      showPage(targetPage);
+      navigateToSidebarPage(targetPage);
 
       // On mobile, close the nav menu after picking a page
       if (sidebar) {
@@ -494,17 +476,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // On load: check the URL hash (e.g. "#research") and jump straight there
-  const initialPage = window.location.hash.replace("#", "");
-  if (initialPage) {
-    showPage(initialPage);
-  }
+  // On load: resolve whatever the URL says (a normal page hash, or —
+  // if this is a refresh while deep in a post/community/case study —
+  // that specific view, since the same URL patterns work either way).
+  resolveAndShowCurrentView();
 
-  // Support browser back/forward buttons changing the hash
-  window.addEventListener("hashchange", () => {
-    const page = window.location.hash.replace("#", "");
-    showPage(page);
-  });
+  // Fallback for a manually-edited hash in the address bar — pushState-based
+  // navigation (used everywhere above) never fires this on its own, so it
+  // only matters for that one edge case.
+  window.addEventListener("hashchange", resolveAndShowCurrentView);
 
   // ===================== VIEW ANOTHER USER'S PROFILE =====================
   async function openUserProfile(userId) {
@@ -546,8 +526,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const isOwnProfile = currentUser && currentUser.id === userId;
         messageBtn.classList.toggle("hidden", isOwnProfile);
         messageBtn.onclick = () => {
-          showPage("messages");
-          window.location.hash = "messages";
+          navigateToSidebarPage("messages");
           const corrRef = generateCorrRef();
           loadMessageThread(userId, user.name, corrRef);
         };
@@ -565,8 +544,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (userProfileBack) {
     userProfileBack.addEventListener("click", (event) => {
       event.preventDefault();
-      showPage("feed");
-      window.location.hash = "feed";
+      navigateToSidebarPage("feed");
     });
   }
 
@@ -582,8 +560,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (settingsBack) {
     settingsBack.addEventListener("click", (event) => {
       event.preventDefault();
-      showPage("profile");
-      window.location.hash = "profile";
+      navigateToSidebarPage("profile");
     });
   }
 
@@ -1516,8 +1493,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!delResponse.ok) throw new Error(delData.message || "Could not delete this case study.");
 
             showToast("Case study deleted.", "success");
-            showPage("library");
-            window.location.hash = "library";
+            navigateToSidebarPage("library");
           } catch (err) {
             console.error("Delete case study failed:", err);
             showToast(err.message || "Something went wrong.", "error");
@@ -1801,8 +1777,7 @@ document.addEventListener("DOMContentLoaded", () => {
               if (!response.ok) throw new Error(data.message || "Could not delete this community.");
 
               showToast("Community deleted.", "success");
-              showPage("communities");
-              window.location.hash = "communities";
+              navigateToSidebarPage("communities");
             } catch (err) {
               console.error("Delete community failed:", err);
               showToast(err.message || "Something went wrong.", "error");
