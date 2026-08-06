@@ -2570,6 +2570,11 @@ html[data-theme="dark"] .theme-toggle-dot {
   box-shadow: 0 0 8px -1px var(--gold-glow);
 }
 
+.push-toggle.enabled .push-toggle-dot {
+  background: var(--gold-bright);
+  box-shadow: 0 0 8px -1px var(--gold-glow);
+}
+
 /* ===================== FUTURISTIC LOADING STATE ===================== */
 .loader-scan {
   display: flex;
