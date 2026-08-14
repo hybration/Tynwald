@@ -13,10 +13,10 @@
 <link rel="icon" type="image/png" sizes="512x512" href="Images/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=13" />
-<link rel="stylesheet" href="post.css?v=13" />
-<link rel="stylesheet" href="community-detail.css?v=13" />
-<link rel="stylesheet" href="case-study.css?v=13" />
+<link rel="stylesheet" href="styles.css?v=17" />
+<link rel="stylesheet" href="post.css?v=17" />
+<link rel="stylesheet" href="community-detail.css?v=17" />
+<link rel="stylesheet" href="case-study.css?v=17" />
 </head>
 <body>
 
@@ -63,6 +63,9 @@
         </button>
         <button class="nav-item" data-page="profile">
           <svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20v-1.7a3.7 3.7 0 0 0-3.7-3.7H8.7A3.7 3.7 0 0 0 5 18.3V20"></path><circle cx="12" cy="7.3" r="3.7"></circle></svg><span>Profile</span><span class="nav-dot">●</span>
+        </button>
+        <button class="nav-item hidden" data-page="admin" id="adminNavBtn">
+          <svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l7.5 3.4v6c0 4.7-3.2 8.9-7.5 10.1-4.3-1.2-7.5-5.4-7.5-10.1v-6z"></path></svg><span>Admin</span><span class="nav-dot">●</span>
         </button>
       </nav>
 
@@ -572,6 +575,16 @@
             <div class="composer-tab">EDITING RECORD</div>
 
             <div class="auth-field" style="margin-bottom:14px;">
+              <label class="auth-label">Profile picture</label>
+              <div style="display:flex;align-items:center;gap:14px;">
+                <div class="avatar" id="editAvatarPreview" style="width:56px;height:56px;font-size:18px;flex-shrink:0;"></div>
+                <input type="file" id="editAvatarInput" accept="image/*" class="hidden" />
+                <button type="button" id="editAvatarUploadBtn" class="btn-ghost-inline" style="font-size:11px;padding:6px 12px;">Upload photo</button>
+                <button type="button" id="editAvatarRemoveBtn" class="btn-ghost-inline hidden" style="font-size:11px;padding:6px 12px;">Remove</button>
+              </div>
+            </div>
+
+            <div class="auth-field" style="margin-bottom:14px;">
               <label class="auth-label" for="editName">Full name</label>
               <input type="text" id="editName" class="auth-input" placeholder="Your name" />
             </div>
@@ -645,7 +658,11 @@
                   <div class="profile-name" id="userProfileName"></div>
                   <div class="profile-subtitle" id="userProfileSubtitle"></div>
                 </div>
-                <button id="userProfileMessageBtn" class="btn-primary" style="margin-bottom:0;">Message</button>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <button id="userProfileMessageBtn" class="btn-primary" style="margin-bottom:0;">Message</button>
+                  <button type="button" id="userProfileReportBtn" class="report-btn" title="Report user" style="border:1px solid var(--line);padding:9px;clip-path:polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));"></button>
+                  <button type="button" id="userProfileBlockBtn" class="delete-btn" title="Block user" style="border:1px solid var(--line);padding:9px;clip-path:polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));"></button>
+                </div>
               </div>
               <p class="profile-bio" id="userProfileBio"></p>
             </div>
@@ -709,6 +726,16 @@
           </form>
         </div>
 
+        <div class="settings-block">
+          <h2 class="settings-block-title">Blocked users</h2>
+          <p class="meta-text" style="display:block; line-height:1.6; margin-bottom:16px;">
+            People you've blocked can't message you, and neither of you will see each other's posts in Feed.
+          </p>
+          <div id="blockedUsersList">
+            <p class="meta-text">Loading...</p>
+          </div>
+        </div>
+
         <div class="settings-block settings-block-danger">
           <h2 class="settings-block-title">Delete account</h2>
           <p class="meta-text" style="display:block; line-height:1.6; margin-bottom:16px;">
@@ -726,6 +753,60 @@
             </div>
             <button type="submit" class="btn-danger" id="deleteAccountSubmit">Delete my account</button>
           </form>
+        </div>
+      </section>
+
+      <!-- ===================== ADMIN ===================== -->
+      <section class="page hidden" id="page-admin">
+        <header class="page-header">
+          <div class="eyebrow">MODERATION</div>
+          <h1>Admin</h1>
+        </header>
+
+        <div id="adminStats" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:28px;">
+          <div class="settings-block" style="flex:1;min-width:120px;text-align:center;padding:16px;">
+            <div class="stat-value" id="adminStatUsers" style="font-size:24px;">—</div>
+            <div class="meta-text">users</div>
+          </div>
+          <div class="settings-block" style="flex:1;min-width:120px;text-align:center;padding:16px;">
+            <div class="stat-value" id="adminStatPosts" style="font-size:24px;">—</div>
+            <div class="meta-text">posts</div>
+          </div>
+          <div class="settings-block" style="flex:1;min-width:120px;text-align:center;padding:16px;">
+            <div class="stat-value" id="adminStatPending" style="font-size:24px;color:var(--red);">—</div>
+            <div class="meta-text">pending reports</div>
+          </div>
+          <div class="settings-block" style="flex:1;min-width:120px;text-align:center;padding:16px;">
+            <div class="stat-value" id="adminStatSuspended" style="font-size:24px;">—</div>
+            <div class="meta-text">suspended</div>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <span class="filter-chip active" data-admin-tab="reports">Reports</span>
+          <span class="filter-chip" data-admin-tab="users">Users</span>
+        </div>
+
+        <!-- REPORTS TAB -->
+        <div id="adminReportsTab">
+          <div class="filter-row" style="margin-top:16px;">
+            <span class="filter-chip active" data-report-status="pending">Pending</span>
+            <span class="filter-chip" data-report-status="reviewed">Reviewed</span>
+            <span class="filter-chip" data-report-status="dismissed">Dismissed</span>
+          </div>
+          <div id="adminReportsList" style="margin-top:16px;">
+            <p class="empty-state">Loading reports...</p>
+          </div>
+        </div>
+
+        <!-- USERS TAB -->
+        <div id="adminUsersTab" class="hidden">
+          <div class="conversation-search" style="margin:16px 0;padding:0;border:none;background:none;">
+            <input type="text" id="adminUserSearch" class="composer-title-input" placeholder="Search by name or email..." />
+          </div>
+          <div id="adminUsersList">
+            <p class="empty-state">Loading users...</p>
+          </div>
         </div>
       </section>
 
@@ -939,9 +1020,35 @@
     </div>
   </div>
 
+  <div class="confirm-modal-overlay hidden" id="reportModalOverlay">
+    <div class="confirm-modal report-modal">
+      <div class="confirm-modal-icon">!</div>
+      <p class="confirm-modal-message" style="margin-bottom:14px;">Report this content</p>
+      <div class="auth-field" style="margin-bottom:14px;">
+        <label class="auth-label" for="reportReason">Reason</label>
+        <select id="reportReason" class="auth-input">
+          <option value="Spam">Spam</option>
+          <option value="Harassment">Harassment</option>
+          <option value="Misinformation">Misinformation</option>
+          <option value="Inappropriate content">Inappropriate content</option>
+          <option value="Impersonation">Impersonation</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="auth-field" style="margin-bottom:14px;">
+        <label class="auth-label" for="reportDetails">Additional details <span style="font-weight:400;text-transform:none;font-family:var(--font-sans);font-size:11px;">(optional)</span></label>
+        <textarea id="reportDetails" class="composer-body-input" rows="3" maxlength="1000" placeholder="Anything that would help us review this..."></textarea>
+      </div>
+      <div class="confirm-modal-actions">
+        <button class="btn-ghost-inline" id="reportModalCancel">Cancel</button>
+        <button class="confirm-modal-confirm" id="reportModalSubmit">Submit report</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-stack" id="toastStack"></div>
 
-  <script src="config.js?v=13"></script>
-  <script src="script.js?v=13"></script>
+  <script src="config.js?v=17"></script>
+  <script src="script.js?v=17"></script>
 </body>
 </html>

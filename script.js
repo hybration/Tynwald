@@ -157,9 +157,48 @@ document.addEventListener("DOMContentLoaded", () => {
     if (role) el.title = role;
   }
 
+  // ===================== AVATAR RENDERING =====================
+  // Single source of truth for how an avatar element looks — a real
+  // profile picture if the person has set one, otherwise the existing
+  // initials + role-ring fallback. Used everywhere an avatar shows up
+  // (sidebar, posts, comments, threads, messages, profile pages) so a
+  // profile picture change is reflected consistently across the whole
+  // app instead of needing separate handling in a dozen places.
+  function renderAvatar(el, user) {
+    if (!el) return;
+
+    if (user && user.profilePicture) {
+      el.style.backgroundImage = `url('${user.profilePicture}')`;
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
+      el.textContent = "";
+      el.classList.remove("has-role-ring");
+      el.style.removeProperty("--role-ring");
+      if (user.role) el.title = user.role;
+    } else {
+      el.style.backgroundImage = "";
+      el.textContent = getInitials(user?.name);
+      applyRoleRing(el, user?.role);
+    }
+  }
+
   // ===================== COMMENT ICON =====================
   function commentIcon() {
     return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`;
+  }
+
+  // ===================== REPORT ICON =====================
+  function reportIcon() {
+    return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>`;
+  }
+
+  // ===================== BLOCK / UNBLOCK ICONS =====================
+  function blockIcon() {
+    return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"></line></svg>`;
+  }
+
+  function unblockIcon() {
+    return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path></svg>`;
   }
 
   // ===================== TRASH ICON =====================
@@ -207,6 +246,74 @@ document.addEventListener("DOMContentLoaded", () => {
       cancelBtn.addEventListener("click", onCancel);
       overlay.addEventListener("click", onOverlayClick);
     });
+  }
+
+  // ===================== REPORT MODAL =====================
+  // Used for reporting a post, comment, or user — same overlay pattern
+  // as confirmDialog, but with an actual form (reason + optional
+  // details) instead of a yes/no choice.
+  function openReportModal(targetType, targetId) {
+    const overlay = document.getElementById("reportModalOverlay");
+    const reasonSelect = document.getElementById("reportReason");
+    const detailsInput = document.getElementById("reportDetails");
+    const submitBtn = document.getElementById("reportModalSubmit");
+    const cancelBtn = document.getElementById("reportModalCancel");
+
+    if (!overlay || !reasonSelect || !detailsInput || !submitBtn || !cancelBtn) return;
+
+    reasonSelect.value = "Spam";
+    detailsInput.value = "";
+    overlay.classList.remove("hidden");
+
+    function cleanup() {
+      overlay.classList.add("hidden");
+      submitBtn.removeEventListener("click", onSubmit);
+      cancelBtn.removeEventListener("click", onCancel);
+      overlay.removeEventListener("click", onOverlayClick);
+    }
+
+    async function onSubmit() {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting...";
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/reports`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({
+            targetType,
+            targetId,
+            reason: reasonSelect.value,
+            details: detailsInput.value.trim(),
+          }),
+        });
+        const data = await safeJson(response);
+        if (!response.ok) throw new Error(data.message || "Could not submit your report.");
+
+        showToast(data.message || "Report received.", "success");
+        cleanup();
+      } catch (err) {
+        console.error("Submit report failed:", err);
+        showToast(err.message || "Something went wrong.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit report";
+      }
+    }
+
+    function onCancel() {
+      cleanup();
+    }
+    function onOverlayClick(event) {
+      if (event.target === overlay) cleanup();
+    }
+
+    submitBtn.addEventListener("click", onSubmit);
+    cancelBtn.addEventListener("click", onCancel);
+    overlay.addEventListener("click", onOverlayClick);
   }
 
 
@@ -417,6 +524,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.addEventListener("popstate", resolveAndShowCurrentView);
 
+  // ===================== CAPACITOR: ANDROID BACK BUTTON =====================
+  // Only fires inside the wrapped native app — Capacitor's native Android
+  // bridge auto-injects "window.Capacitor" and dispatches this event on
+  // the hardware/gesture back button, no plugin import needed. A normal
+  // browser tab never has window.Capacitor, so this is a safe no-op there.
+  if (window.Capacitor) {
+    document.addEventListener("backbutton", () => {
+      // If there's real in-app history to unwind, use it (same back
+      // navigation the ← arrows and browser back button already use).
+      // Otherwise let Android's default behavior happen (minimize the
+      // app) instead of trapping the person with nowhere to go.
+      if (window.history.length > 1) {
+        history.back();
+      } else if (window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+        window.Capacitor.Plugins.App.exitApp();
+      }
+    });
+  }
+
   const postThreadBack = document.getElementById("postThreadBack");
   if (postThreadBack) {
     postThreadBack.addEventListener("click", (event) => {
@@ -514,21 +640,60 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("userProfileBio").textContent = user.bio || "No bio yet.";
 
       const avatar = document.getElementById("userProfileAvatar");
-      avatar.textContent = getInitials(user.name);
-      applyRoleRing(avatar, user.role);
+      renderAvatar(avatar, user);
 
       renderChips(document.getElementById("userProfileResearchAreas"), user.researchAreas, "None listed yet.");
       renderChips(document.getElementById("userProfileSkills"), user.skills, "None listed yet.");
 
       const messageBtn = document.getElementById("userProfileMessageBtn");
+      const reportBtn = document.getElementById("userProfileReportBtn");
+      const blockBtn = document.getElementById("userProfileBlockBtn");
+      const currentUser = getStoredUser();
+      const isOwnProfile = currentUser && currentUser.id === userId;
+
       if (messageBtn) {
-        const currentUser = getStoredUser();
-        const isOwnProfile = currentUser && currentUser.id === userId;
         messageBtn.classList.toggle("hidden", isOwnProfile);
         messageBtn.onclick = () => {
           navigateToSidebarPage("messages");
           const corrRef = generateCorrRef();
-          loadMessageThread(userId, user.name, corrRef);
+          loadMessageThread(userId, user.name, corrRef, user.profilePicture);
+        };
+      }
+
+      if (reportBtn) {
+        reportBtn.classList.toggle("hidden", isOwnProfile);
+        reportBtn.innerHTML = reportIcon();
+        reportBtn.dataset.targetType = "user";
+        reportBtn.dataset.targetId = userId;
+      }
+
+      if (blockBtn) {
+        blockBtn.classList.toggle("hidden", isOwnProfile);
+        const isBlocked = user.blockedByMe === true;
+        blockBtn.innerHTML = isBlocked ? unblockIcon() : blockIcon();
+        blockBtn.title = isBlocked ? "Unblock user" : "Block user";
+        blockBtn.onclick = async () => {
+          const confirmed = await confirmDialog(
+            isBlocked
+              ? `Unblock ${user.name}? You'll be able to message each other and see each other's posts again.`
+              : `Block ${user.name}? You won't be able to message each other, and you won't see each other's posts in Feed.`
+          );
+          if (!confirmed) return;
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/users/${userId}/block`, {
+              method: isBlocked ? "DELETE" : "POST",
+              headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            const data = await safeJson(response);
+            if (!response.ok) throw new Error(data.message || "Something went wrong.");
+
+            showToast(isBlocked ? "User unblocked." : "User blocked.", "success");
+            openUserProfile(userId);
+          } catch (err) {
+            console.error("Block/unblock failed:", err);
+            showToast(err.message || "Something went wrong.", "error");
+          }
         };
       }
     } catch (err) {
@@ -553,7 +718,70 @@ document.addEventListener("DOMContentLoaded", () => {
   if (openSettingsBtn) {
     openSettingsBtn.addEventListener("click", () => {
       navigateToPage("page-settings");
+      loadBlockedUsers();
     });
+  }
+
+  async function loadBlockedUsers() {
+    const container = document.getElementById("blockedUsersList");
+    if (!container) return;
+
+    container.innerHTML = `<p class="meta-text">Loading...</p>`;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/me/blocked`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const blockedUsers = await safeJson(response);
+      if (!response.ok) throw new Error(blockedUsers.message || "Could not load blocked users.");
+
+      if (blockedUsers.length === 0) {
+        container.innerHTML = `<p class="meta-text">You haven't blocked anyone.</p>`;
+        return;
+      }
+
+      container.innerHTML = "";
+      blockedUsers.forEach((blockedUser) => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);";
+        row.innerHTML = `
+          <div class="thread-avatar small"></div>
+          <div style="flex:1;min-width:0;">
+            <div class="user-name" style="font-size:13px;"></div>
+            <div class="user-role" style="font-size:10px;"></div>
+          </div>
+          <button type="button" class="btn-ghost-inline" style="font-size:11px;padding:5px 10px;">Unblock</button>
+        `;
+        renderAvatar(row.querySelector(".thread-avatar"), blockedUser);
+        row.querySelector(".user-name").textContent = blockedUser.name;
+        row.querySelector(".user-role").textContent = blockedUser.role || "";
+
+        row.querySelector("button").addEventListener("click", async () => {
+          const confirmed = await confirmDialog(`Unblock ${blockedUser.name}?`);
+          if (!confirmed) return;
+
+          try {
+            const delResponse = await fetch(`${API_BASE_URL}/users/${blockedUser._id}/block`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            const delData = await safeJson(delResponse);
+            if (!delResponse.ok) throw new Error(delData.message || "Could not unblock this user.");
+
+            showToast("User unblocked.", "success");
+            loadBlockedUsers();
+          } catch (err) {
+            console.error("Unblock failed:", err);
+            showToast(err.message || "Something went wrong.", "error");
+          }
+        });
+
+        container.appendChild(row);
+      });
+    } catch (err) {
+      console.error("Load blocked users failed:", err);
+      container.innerHTML = `<p class="meta-text">Could not load blocked users.</p>`;
+    }
   }
 
   const settingsBack = document.getElementById("settingsBack");
@@ -562,6 +790,268 @@ document.addEventListener("DOMContentLoaded", () => {
       event.preventDefault();
       navigateToSidebarPage("profile");
     });
+  }
+
+  // ===================== ADMIN DASHBOARD =====================
+  if (adminNavBtn) {
+    adminNavBtn.addEventListener("click", () => {
+      loadAdminStats();
+      loadAdminReports("pending");
+    });
+  }
+
+  // Top-level Reports/Users tab switch
+  document.querySelectorAll("#page-admin > .filter-row [data-admin-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#page-admin > .filter-row [data-admin-tab]").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      const target = tab.dataset.adminTab;
+      document.getElementById("adminReportsTab").classList.toggle("hidden", target !== "reports");
+      document.getElementById("adminUsersTab").classList.toggle("hidden", target !== "users");
+      if (target === "users") loadAdminUsers("");
+    });
+  });
+
+  // Report status sub-tabs (Pending/Reviewed/Dismissed)
+  document.querySelectorAll("#adminReportsTab [data-report-status]").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#adminReportsTab [data-report-status]").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      loadAdminReports(tab.dataset.reportStatus);
+    });
+  });
+
+  async function loadAdminStats() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const stats = await safeJson(response);
+      if (!response.ok) throw new Error(stats.message || "Could not load stats.");
+
+      document.getElementById("adminStatUsers").textContent = stats.userCount;
+      document.getElementById("adminStatPosts").textContent = stats.postCount;
+      document.getElementById("adminStatPending").textContent = stats.pendingReportCount;
+      document.getElementById("adminStatSuspended").textContent = stats.suspendedCount;
+    } catch (err) {
+      console.error("Load admin stats failed:", err);
+    }
+  }
+
+  async function loadAdminReports(status) {
+    const container = document.getElementById("adminReportsList");
+    if (!container) return;
+    container.innerHTML = `<p class="empty-state">Loading reports...</p>`;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/reports?status=${status}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const reports = await safeJson(response);
+      if (!response.ok) throw new Error(reports.message || "Could not load reports.");
+
+      if (reports.length === 0) {
+        container.innerHTML = `<p class="empty-state">No ${status} reports.</p>`;
+        return;
+      }
+
+      container.innerHTML = "";
+      reports.forEach((report) => container.appendChild(renderAdminReportCard(report, status)));
+    } catch (err) {
+      console.error("Load admin reports failed:", err);
+      container.innerHTML = `<p class="empty-state">Could not load reports.</p>`;
+    }
+  }
+
+  function renderAdminReportCard(report, currentStatus) {
+    const card = document.createElement("div");
+    card.className = "settings-block";
+    card.style.marginBottom = "14px";
+
+    const preview = report.targetPreview;
+    let previewHtml = `<p class="meta-text">Original content is no longer available.</p>`;
+    if (preview) {
+      if (report.targetType === "post") {
+        previewHtml = `<p style="font-size:13px;color:var(--ink-soft);"><strong>${preview.authorName || "Unknown"}</strong> — ${preview.title}<br>${(preview.body || "").slice(0, 200)}</p>`;
+      } else if (report.targetType === "comment") {
+        previewHtml = `<p style="font-size:13px;color:var(--ink-soft);"><strong>${preview.authorName || "Unknown"}</strong>: ${(preview.text || "").slice(0, 200)}</p>`;
+      } else if (report.targetType === "user") {
+        previewHtml = `<p style="font-size:13px;color:var(--ink-soft);"><strong>${preview.name}</strong> (${preview.email}) — ${preview.role || ""}</p>`;
+      }
+    }
+
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <span class="tag tag-outline">${report.targetType}</span>
+          <span class="tag" style="margin-left:6px;">${report.reason}</span>
+        </div>
+        <span class="meta-text">${formatRelativeTime(report.createdAt)}</span>
+      </div>
+      <div class="report-preview">${previewHtml}</div>
+      ${report.details ? `<p class="meta-text" style="margin-top:8px;">"${report.details}"</p>` : ""}
+      <p class="meta-text" style="margin-top:8px;">Reported by ${report.reporter?.name || "Unknown"}</p>
+      ${
+        report.status !== "pending"
+          ? `<p class="meta-text" style="margin-top:6px;">Resolved by ${report.resolvedBy?.name || "—"}${report.resolutionNote ? `: ${report.resolutionNote}` : ""}</p>`
+          : ""
+      }
+      <div class="report-actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;"></div>
+    `;
+
+    const actions = card.querySelector(".report-actions");
+
+    if (currentStatus === "pending") {
+      if (report.targetType === "post" || report.targetType === "comment") {
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "btn-danger";
+        removeBtn.style.cssText = "font-size:11px;padding:7px 12px;";
+        removeBtn.textContent = "Remove content";
+        removeBtn.addEventListener("click", async () => {
+          const confirmed = await confirmDialog("Remove this content? This can't be undone.");
+          if (!confirmed) return;
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/content`, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+              body: JSON.stringify({ targetType: report.targetType, targetId: report.targetId }),
+            });
+            const data = await safeJson(response);
+            if (!response.ok) throw new Error(data.message || "Could not remove this content.");
+            await updateReportStatus(report._id, "reviewed", "Content removed.");
+            showToast("Content removed.", "success");
+            loadAdminReports("pending");
+          } catch (err) {
+            showToast(err.message || "Something went wrong.", "error");
+          }
+        });
+        actions.appendChild(removeBtn);
+      }
+
+      const dismissBtn = document.createElement("button");
+      dismissBtn.className = "btn-ghost-inline";
+      dismissBtn.style.cssText = "font-size:11px;padding:7px 12px;";
+      dismissBtn.textContent = "Dismiss";
+      dismissBtn.addEventListener("click", async () => {
+        await updateReportStatus(report._id, "dismissed", "");
+        loadAdminReports("pending");
+        loadAdminStats();
+      });
+      actions.appendChild(dismissBtn);
+    }
+
+    return card;
+  }
+
+  async function updateReportStatus(reportId, status, resolutionNote) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/reports/${reportId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ status, resolutionNote }),
+      });
+      const data = await safeJson(response);
+      if (!response.ok) throw new Error(data.message || "Could not update this report.");
+      return data;
+    } catch (err) {
+      console.error("Update report status failed:", err);
+      showToast(err.message || "Something went wrong.", "error");
+    }
+  }
+
+  let adminUserSearchTimeout = null;
+  const adminUserSearch = document.getElementById("adminUserSearch");
+  if (adminUserSearch) {
+    adminUserSearch.addEventListener("input", () => {
+      clearTimeout(adminUserSearchTimeout);
+      adminUserSearchTimeout = setTimeout(() => loadAdminUsers(adminUserSearch.value.trim()), 350);
+    });
+  }
+
+  async function loadAdminUsers(search) {
+    const container = document.getElementById("adminUsersList");
+    if (!container) return;
+    container.innerHTML = `<p class="empty-state">Loading users...</p>`;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/users?search=${encodeURIComponent(search)}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const users = await safeJson(response);
+      if (!response.ok) throw new Error(users.message || "Could not load users.");
+
+      if (users.length === 0) {
+        container.innerHTML = `<p class="empty-state">No users found.</p>`;
+        return;
+      }
+
+      container.innerHTML = "";
+      users.forEach((user) => container.appendChild(renderAdminUserRow(user)));
+    } catch (err) {
+      console.error("Load admin users failed:", err);
+      container.innerHTML = `<p class="empty-state">Could not load users.</p>`;
+    }
+  }
+
+  function renderAdminUserRow(user) {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);";
+
+    row.innerHTML = `
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);">${user.name}${user.isAdmin ? ' <span class="tag" style="font-size:9px;">ADMIN</span>' : ""}</div>
+        <div class="meta-text">${user.email} · ${user.role || ""}</div>
+        ${user.isSuspended ? `<div class="meta-text" style="color:var(--red);">Suspended${user.suspendedReason ? `: ${user.suspendedReason}` : ""}</div>` : ""}
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;"></div>
+    `;
+
+    const actionsEl = row.querySelector("div > div:last-child");
+
+    if (!user.isAdmin) {
+      const btn = document.createElement("button");
+      btn.className = user.isSuspended ? "btn-ghost-inline" : "btn-danger";
+      btn.style.cssText = "font-size:11px;padding:7px 12px;";
+      btn.textContent = user.isSuspended ? "Unsuspend" : "Suspend";
+      btn.addEventListener("click", async () => {
+        if (user.isSuspended) {
+          const confirmed = await confirmDialog(`Unsuspend ${user.name}?`);
+          if (!confirmed) return;
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/users/${user._id}/unsuspend`, {
+              method: "PUT",
+              headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            const data = await safeJson(response);
+            if (!response.ok) throw new Error(data.message || "Could not unsuspend this user.");
+            showToast("User unsuspended.", "success");
+            loadAdminUsers(adminUserSearch ? adminUserSearch.value.trim() : "");
+          } catch (err) {
+            showToast(err.message || "Something went wrong.", "error");
+          }
+        } else {
+          const confirmed = await confirmDialog(`Suspend ${user.name}? They won't be able to log in until unsuspended.`);
+          if (!confirmed) return;
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/users/${user._id}/suspend`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+              body: JSON.stringify({ reason: "" }),
+            });
+            const data = await safeJson(response);
+            if (!response.ok) throw new Error(data.message || "Could not suspend this user.");
+            showToast("User suspended.", "success");
+            loadAdminUsers(adminUserSearch ? adminUserSearch.value.trim() : "");
+            loadAdminStats();
+          } catch (err) {
+            showToast(err.message || "Something went wrong.", "error");
+          }
+        }
+      });
+      actionsEl.appendChild(btn);
+    }
+
+    return row;
   }
 
   // ===================== PUSH NOTIFICATIONS =====================
@@ -800,21 +1290,18 @@ document.addEventListener("DOMContentLoaded", () => {
   if (currentUser && sidebarUserName && sidebarUserRole && sidebarAvatar) {
     sidebarUserName.textContent = currentUser.name;
     sidebarUserRole.textContent = currentUser.role;
-    const initials = currentUser.name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-    sidebarAvatar.textContent = initials;
-    applyRoleRing(sidebarAvatar, currentUser.role);
+    renderAvatar(sidebarAvatar, currentUser);
+  }
+
+  const adminNavBtn = document.getElementById("adminNavBtn");
+  if (adminNavBtn && currentUser?.isAdmin) {
+    adminNavBtn.classList.remove("hidden");
   }
 
   // Feed composer avatar — same logged-in user, same role ring
   const composerAvatarEl = document.getElementById("composerAvatar");
   if (currentUser && composerAvatarEl) {
-    composerAvatarEl.textContent = getInitials(currentUser.name);
-    applyRoleRing(composerAvatarEl, currentUser.role);
+    renderAvatar(composerAvatarEl, currentUser);
   }
 
   // ===================== FEED: LOAD REAL POSTS =====================
@@ -868,7 +1355,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <a href="post.html?id=${post._id}" class="comment-count-link open-thread-link" data-post-id="${post._id}">${commentIcon()}<span>${post.commentCount || 0}</span></a>
         <button type="button" class="share-btn" title="Share">${shareIcon()}</button>
         <button type="button" class="bookmark-btn" data-saved="${post.savedByMe === true}" title="Save">${bookmarkIcon(post.savedByMe === true)}</button>
-        ${isOwnPost ? `<button type="button" class="delete-btn" title="Delete post">${trashIcon()}</button>` : ""}
+        ${isOwnPost ? `<button type="button" class="delete-btn" title="Delete post">${trashIcon()}</button>` : `<button type="button" class="report-btn" title="Report post" data-target-type="post" data-target-id="${post._id}">${reportIcon()}</button>`}
         <span class="tag tag-outline"></span>
         <a href="post.html?id=${post._id}" class="link-text open-thread-link" data-post-id="${post._id}">Open file →</a>
       </div>
@@ -1162,6 +1649,14 @@ document.addEventListener("DOMContentLoaded", () => {
     openPostThread(link.dataset.postId);
   });
 
+  // ===================== REPORT BUTTON (delegated, works everywhere) =====================
+  document.body.addEventListener("click", (event) => {
+    const btn = event.target.closest(".report-btn");
+    if (!btn) return;
+    event.preventDefault();
+    openReportModal(btn.dataset.targetType, btn.dataset.targetId);
+  });
+
   // ===================== DELETE POST (feed card) =====================
   document.body.addEventListener("click", async (event) => {
     const deleteBtn = event.target.closest(".post-card .delete-btn");
@@ -1335,6 +1830,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const likeCount = comment.likes ? comment.likes.length : 0;
     const authorName = comment.isDeleted ? "" : (comment.author?.name || "Unknown");
     const authorInst = comment.isDeleted ? "" : (comment.author?.institution || "");
+    const currentUser = getStoredUser();
+    const isOwnComment = currentUser && comment.author?._id === currentUser.id;
+    const canReportComment = !comment.isDeleted && !isOwnComment;
 
     div.innerHTML = `
       <div class="thread-avatar small"></div>
@@ -1349,13 +1847,17 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="comment-actions">
           <button class="comment-action like-btn" data-liked="${liked}" data-count="${likeCount}">${likeButtonHTML(liked, likeCount)}</button>
           <span class="comment-action reply-trigger">Reply</span>
+          ${canReportComment ? `<button type="button" class="comment-action report-btn" title="Report comment" data-target-type="comment" data-target-id="${comment._id}">${reportIcon()}</button>` : ""}
         </div>
       </div>
     `;
 
-    div.querySelector(".thread-avatar").textContent = comment.isDeleted ? "—" : getInitials(authorName);
-    if (!comment.isDeleted) {
-      applyRoleRing(div.querySelector(".thread-avatar"), comment.author?.role);
+    const commentAvatarEl = div.querySelector(".thread-avatar");
+    if (comment.isDeleted) {
+      commentAvatarEl.style.backgroundImage = "";
+      commentAvatarEl.textContent = "—";
+    } else {
+      renderAvatar(commentAvatarEl, comment.author);
     }
     div.querySelector(".comment-author").textContent = comment.isDeleted ? "[deleted]" : authorName;
     div.querySelector(".comment-inst").textContent = authorInst;
@@ -1442,8 +1944,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       document.getElementById("threadCaseId").textContent = post.caseId;
       document.getElementById("threadStatus").textContent = post.status;
-      document.getElementById("threadAvatar").textContent = getInitials(post.author?.name);
-      applyRoleRing(document.getElementById("threadAvatar"), post.author?.role);
+      renderAvatar(document.getElementById("threadAvatar"), post.author);
       document.getElementById("threadAuthor").textContent = post.author?.name || "Unknown";
       if (post.author?._id) {
         document.getElementById("threadAuthor").href = `index.html?viewUser=${post.author._id}`;
@@ -1518,8 +2019,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentUser = getStoredUser();
       const replyAvatar = document.getElementById("replyComposerAvatar");
       if (currentUser && replyAvatar) {
-        replyAvatar.textContent = getInitials(currentUser.name);
-        applyRoleRing(replyAvatar, currentUser.role);
+        renderAvatar(replyAvatar, currentUser);
       }
 
       if (replyInput) {
@@ -1596,8 +2096,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentUser = getStoredUser();
       const replyAvatar = document.getElementById("replyComposerAvatar");
       if (currentUser && replyAvatar) {
-        replyAvatar.textContent = getInitials(currentUser.name);
-        applyRoleRing(replyAvatar, currentUser.role);
+        renderAvatar(replyAvatar, currentUser);
       }
 
       const csDeleteBtn = document.getElementById("csDeleteBtn");
@@ -1924,8 +2423,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="thread-avatar small"></div>
                 <span class="comment-author"></span>
               `;
-              row.querySelector(".thread-avatar").textContent = getInitials(mod.name);
-              applyRoleRing(row.querySelector(".thread-avatar"), mod.role);
+              renderAvatar(row.querySelector(".thread-avatar"), mod);
               row.querySelector(".comment-author").textContent = mod.name;
               moderatorsList.appendChild(row);
             });
@@ -2936,13 +3434,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function loadMessageThread(userId, userName, corrRef) {
+  async function loadMessageThread(userId, userName, corrRef, userPicture) {
     if (!messageBubbles) return;
 
     activeConversationUserId = userId;
     activeConversationName = userName;
 
-    if (threadContactAvatar) threadContactAvatar.textContent = getInitials(userName);
+    if (threadContactAvatar) renderAvatar(threadContactAvatar, { name: userName, profilePicture: userPicture });
     if (threadContactName) threadContactName.textContent = userName;
     if (threadContactRole) threadContactRole.textContent = corrRef || "";
 
@@ -3228,7 +3726,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
-    item.querySelector(".thread-avatar").textContent = getInitials(convo.name);
+    renderAvatar(item.querySelector(".thread-avatar"), convo);
     item.querySelector(".conversation-name").textContent = convo.name;
     item.querySelector(".conversation-time").textContent = formatRelativeTime(convo.lastMessageTime);
     item.querySelector(".conversation-preview").textContent = convo.lastMessage;
@@ -3243,7 +3741,7 @@ document.addEventListener("DOMContentLoaded", () => {
     item.addEventListener("click", () => {
       conversationList?.querySelectorAll(".conversation-item").forEach((i) => i.classList.remove("active"));
       item.classList.add("active");
-      loadMessageThread(convo.userId, convo.name, corrRef);
+      loadMessageThread(convo.userId, convo.name, corrRef, convo.profilePicture);
 
       const messagesLayoutEl = document.querySelector(".messages-layout");
       if (messagesLayoutEl) messagesLayoutEl.classList.add("mobile-thread-open");
@@ -3758,8 +4256,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Populates the view mode with real user data
   function populateProfileView(user) {
     if (profileAvatar) {
-      profileAvatar.textContent = getInitials(user.name);
-      applyRoleRing(profileAvatar, user.role);
+      renderAvatar(profileAvatar, user);
     }
     if (profileName) profileName.textContent = user.name;
 
@@ -3827,6 +4324,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Switch to edit mode, pre-filling fields from cached profile
+  let pendingProfilePicture = "";
+  const editAvatarPreview = document.getElementById("editAvatarPreview");
+  const editAvatarInput = document.getElementById("editAvatarInput");
+  const editAvatarUploadBtn = document.getElementById("editAvatarUploadBtn");
+  const editAvatarRemoveBtn = document.getElementById("editAvatarRemoveBtn");
+
   if (editProfileBtn) {
     editProfileBtn.addEventListener("click", () => {
       if (!cachedProfile) return;
@@ -3838,8 +4341,46 @@ document.addEventListener("DOMContentLoaded", () => {
       if (editResearchAreas) editResearchAreas.value = (cachedProfile.researchAreas || []).join(", ");
       if (editSkills) editSkills.value = (cachedProfile.skills || []).join(", ");
 
+      pendingProfilePicture = cachedProfile.profilePicture || "";
+      if (editAvatarPreview) renderAvatar(editAvatarPreview, cachedProfile);
+      if (editAvatarRemoveBtn) editAvatarRemoveBtn.classList.toggle("hidden", !pendingProfilePicture);
+
       profileView.classList.add("hidden");
       profileEdit.classList.remove("hidden");
+    });
+  }
+
+  if (editAvatarUploadBtn && editAvatarInput) {
+    editAvatarUploadBtn.addEventListener("click", () => editAvatarInput.click());
+
+    editAvatarInput.addEventListener("change", async () => {
+      const file = editAvatarInput.files[0];
+      if (!file) return;
+
+      editAvatarUploadBtn.disabled = true;
+      editAvatarUploadBtn.textContent = "Uploading...";
+
+      try {
+        const uploadedUrl = await uploadToCloudinary(file);
+        pendingProfilePicture = uploadedUrl;
+        if (editAvatarPreview) renderAvatar(editAvatarPreview, { name: cachedProfile?.name, profilePicture: uploadedUrl });
+        if (editAvatarRemoveBtn) editAvatarRemoveBtn.classList.remove("hidden");
+      } catch (err) {
+        console.error("Profile picture upload failed:", err);
+        showToast(err.message || "Could not upload that image.", "error");
+      } finally {
+        editAvatarUploadBtn.disabled = false;
+        editAvatarUploadBtn.textContent = "Upload photo";
+        editAvatarInput.value = "";
+      }
+    });
+  }
+
+  if (editAvatarRemoveBtn) {
+    editAvatarRemoveBtn.addEventListener("click", () => {
+      pendingProfilePicture = "";
+      if (editAvatarPreview) renderAvatar(editAvatarPreview, { name: cachedProfile?.name, profilePicture: "" });
+      editAvatarRemoveBtn.classList.add("hidden");
     });
   }
 
@@ -3886,6 +4427,7 @@ document.addEventListener("DOMContentLoaded", () => {
             role: editRole ? editRole.value : undefined,
             bio: editBio.value.trim(),
             institution: editInstitution.value.trim(),
+            profilePicture: pendingProfilePicture,
             skills,
             researchAreas,
           }),
@@ -3906,8 +4448,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (sidebarUserName) sidebarUserName.textContent = updatedUser.name;
         if (sidebarUserRole) sidebarUserRole.textContent = updatedUser.role;
         if (sidebarAvatar) {
-          sidebarAvatar.textContent = getInitials(updatedUser.name);
-          applyRoleRing(sidebarAvatar, updatedUser.role);
+          renderAvatar(sidebarAvatar, updatedUser);
         }
 
         // Update localStorage so other parts of the app reflect the change
@@ -3916,6 +4457,7 @@ document.addEventListener("DOMContentLoaded", () => {
           name: updatedUser.name,
           email: updatedUser.email,
           role: updatedUser.role,
+          profilePicture: updatedUser.profilePicture,
         }));
 
         profileEdit.classList.add("hidden");

@@ -2836,6 +2836,26 @@ html[data-theme="dark"] .theme-toggle-dot {
   color: var(--red);
 }
 
+.report-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--slate-soft);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.report-btn:hover {
+  color: var(--gold-bright);
+}
+
+.report-btn:active {
+  transform: scale(0.94);
+}
+
 .delete-btn:active {
   transform: scale(0.94);
 }
