@@ -793,6 +793,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===================== ADMIN DASHBOARD =====================
+  const adminNavBtn = document.getElementById("adminNavBtn");
+  if (adminNavBtn && getStoredUser()?.isAdmin) {
+    adminNavBtn.classList.remove("hidden");
+  }
+
   if (adminNavBtn) {
     adminNavBtn.addEventListener("click", () => {
       loadAdminStats();
@@ -1291,11 +1296,6 @@ document.addEventListener("DOMContentLoaded", () => {
     sidebarUserName.textContent = currentUser.name;
     sidebarUserRole.textContent = currentUser.role;
     renderAvatar(sidebarAvatar, currentUser);
-  }
-
-  const adminNavBtn = document.getElementById("adminNavBtn");
-  if (adminNavBtn && currentUser?.isAdmin) {
-    adminNavBtn.classList.remove("hidden");
   }
 
   // Feed composer avatar — same logged-in user, same role ring
